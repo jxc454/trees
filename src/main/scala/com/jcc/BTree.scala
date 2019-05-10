@@ -13,30 +13,51 @@ object BTree {
   def apply[T](value: T, left: BTree[T], right: BTree[T]): BTree[T] = BTree(value, Option(left), Option(right))
   def apply[T](value: T): BTree[T] = BTree(value, None, None)
 
-  @tailrec
-  def addNode[T](btree: BTree[T], node: BTree[T]): BTree[T] = {
-    if (!btree.hasLeft) return btree.copy(left = Option(node))
-    if (!btree.hasRight) return btree.copy(right = Option(node))
-
-    addNode(btree.left.get, node)
+  def addNode[T](seq: Seq[T], i: Int): BTree[T] = {
+    val left: Option[BTree[T]] = if (seq.lengthCompare(2 * i + 1) > 0) Option(addNode(seq, 2 * i + 1)) else None
+    val right: Option[BTree[T]] = if (seq.lengthCompare(2 * i + 2) > 0) Option(addNode(seq, 2 * i + 2)) else None
+    BTree(seq(i), left, right)
   }
 
   def buildTree[T](values: T*): BTree[T] = {
     require(values.nonEmpty)
-    val inputs: scala.collection.mutable.Queue[T] = scala.collection.mutable.Queue()
-    values.foreach(k => inputs.enqueue{k})
-
-    val treeStart: BTree[T] = this(treeStart)
-
-    values.foldLeft(treeStart)((acc, k) => {
-
-    })
+    addNode(values, 0)
   }
+
+//  def buildTreedBSTree[T](values: T*): Option[BTree[T]] = {
+//    require(values.nonEmpty)
+//
+//  }
 }
 
 object Foo {
-  val tree: BTree[Int] = BTree(5)
-  val tree1: BTree[Int] = BTree(1)
-  val tree2: BTree[Int] = BTree(4, tree, tree1)
-  val tree3: BTree[Int] = BTree(4, tree2, tree)
+  val tree: BTree[Int] = BTree.buildTree(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+  val sorted: Seq[Int] = MergeSortAsc(Seq(2, 6, 2, 5, 4, 5, 7): _*)
+}
+
+object MergeSortAsc {
+  def apply(values: Int*): Seq[Int] = {
+    if (values.length < 2) {
+      values
+    } else {
+      val (left: Seq[Int], right: Seq[Int]) = values.splitAt(values.length / 2)
+
+      val leftSorted: Seq[Int] = MergeSortAsc(left: _*)
+      val rightSorted: Seq[Int] = MergeSortAsc(right: _*)
+
+      merge(leftSorted, rightSorted)
+    }
+  }
+
+  def merge(left: Seq[Int], right: Seq[Int]): Seq[Int] = left match {
+    case leftH :: leftT => right match {
+      case rightH :: rightT => if (leftH < rightH) {
+        leftH +: merge(leftT, right)
+      } else {
+        rightH +: merge(left, rightT)
+      }
+      case Nil => left
+    }
+    case Nil => right
+  }
 }
