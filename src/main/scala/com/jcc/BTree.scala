@@ -1,6 +1,5 @@
 package com.jcc
 
-import scala.annotation.tailrec
 import scala.collection.mutable
 
 trait Tree[T]
@@ -20,6 +19,83 @@ case class BTree[T](value: T, left: Option[BTree[T]], right: Option[BTree[T]]) e
   }
 
   def identical(that: BTree[T]): Boolean = this.inOrderWithLevel() == that.inOrderWithLevel()
+
+  def height: Int = {
+    val leftHeight: Int = 1 + (if (this.hasLeft) this.left.get.height else 0)
+    val rightHeight: Int = 1 + (if (this.hasRight) this.right.get.height else 0)
+
+    math.max(leftHeight, rightHeight)
+  }
+
+  def mapPostOrder[B](f: T => B): BTree[B] = {
+    val left: Option[BTree[B]] = if (this.hasLeft) Option(this.left.get.mapPostOrder(f)) else None
+    val right: Option[BTree[B]] = if (this.hasRight) Option(this.right.get.mapPostOrder(f)) else None
+    BTree(f(this.value), left, right)
+  }
+
+  def mapPreOrder[B](f: T => B): BTree[B] = {
+    val newValue = f(this.value)
+    val left: Option[BTree[B]] = if (this.hasLeft) Option(this.left.get.mapPreOrder(f)) else None
+    val right: Option[BTree[B]] = if (this.hasRight) Option(this.right.get.mapPreOrder(f)) else None
+    BTree(newValue, left, right)
+  }
+
+  def mapInOrder[B](f: T => B): BTree[B] = {
+    val left: Option[BTree[B]] = if (this.hasLeft) Option(this.left.get.mapInOrder(f)) else None
+    val newValue = f(this.value)
+    val right: Option[BTree[B]] = if (this.hasRight) Option(this.right.get.mapInOrder(f)) else None
+    BTree(newValue, left, right)
+  }
+
+  def traverseLevel(f: BTree[T] => Unit): Unit = {
+    val q: mutable.Queue[BTree[T]] = new mutable.Queue[BTree[T]]()
+
+    q.enqueue(this)
+    var tree: BTree[T] = null
+
+    while (q.nonEmpty) {
+      tree = q.dequeue()
+
+      if (tree.hasLeft) q.enqueue(tree.left.get)
+      if (tree.hasRight) q.enqueue(tree.right.get)
+
+      f(tree)
+    }
+  }
+
+  def traverseSpiral(f: BTree[T] => Unit): Unit = {
+    val stack1: mutable.ArrayStack[BTree[T]] = new mutable.ArrayStack[BTree[T]]()
+    val stack2: mutable.ArrayStack[BTree[T]] = new mutable.ArrayStack[BTree[T]]()
+    val q1: mutable.Queue[BTree[T]] = new mutable.Queue[BTree[T]]()
+    val q2: mutable.Queue[BTree[T]] = new mutable.Queue[BTree[T]]()
+
+    stack1.push(this)
+    var stack1Tree: BTree[T] = null
+    var stack2Tree: BTree[T] = null
+
+    while (stack1.nonEmpty || stack2.nonEmpty) {
+      if (stack1.nonEmpty) {
+        while (stack1.nonEmpty) q1.enqueue(stack1.pop)
+
+        while (q1.nonEmpty) {
+          stack1Tree = q1.dequeue()
+          if (stack1Tree.hasRight) stack2.push(stack1Tree.right.get)
+          if (stack1Tree.hasLeft) stack2.push(stack1Tree.left.get)
+          f(stack1Tree)
+        }
+      }
+      if (stack2.nonEmpty) {
+        while (stack2.nonEmpty) q2.enqueue(stack2.pop)
+
+        while (q2.nonEmpty) {
+          stack2Tree = q2.dequeue()
+          if (stack2Tree.hasLeft) stack1.push(stack2Tree.left.get)
+          if (stack2Tree.hasRight) stack1.push(stack2Tree.right.get)
+          f(stack2Tree)
+        }
+      }
+    }
+  }
 }
 
 case class BSTreeOfInt(value: Int, left: Option[BSTreeOfInt], right: Option[BSTreeOfInt]) extends Tree[Int] {
@@ -50,6 +126,18 @@ object BTree {
       val (left: Seq[Int], right: Seq[Int]) = sortedList.splitAt(sortedList.length / 2)
       Option(BSTreeOfInt(right.head, buildBSTreeOfInt(left: _*), buildBSTreeOfInt(right.tail: _*)))
     }
+  }
+
+  def deleteTree[T](tree: BTree[T]): Unit = {
+    tree match {
+      case BTree(_, Some(leftTree), Some(rightTree)) =>
+        deleteTree(leftTree)
+        deleteTree(rightTree)
+      case BTree(_, Some(leftTree), None) => deleteTree(leftTree)
+      case BTree(_, None, Some(rightTree)) => deleteTree(rightTree)
+      case BTree(_, None, None) =>
+    }
+    // tree.delete
   }
 }
 
