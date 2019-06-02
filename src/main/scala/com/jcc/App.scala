@@ -1,9 +1,5 @@
 package com.jcc
 
-/**
- * Hello world!
- *
- */
 object App {
   def main(args: Array[String]): Unit = {
     case class Node[T](value: T, nodes: Option[Seq[Node[T]]])
