@@ -1,6 +1,7 @@
 package com.jcc
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 trait Tree[T]
 
@@ -47,7 +48,7 @@ case class BTree[T](value: T, left: Option[BTree[T]], right: Option[BTree[T]]) e
     BTree(newValue, left, right)
   }
 
-  def traverseLevel(f: BTree[T] => Unit): Unit = {
+  def traverseLevel(leftToRight: Boolean = true)(f: BTree[T] => Unit): Unit = {
     val q: mutable.Queue[BTree[T]] = new mutable.Queue[BTree[T]]()
 
     q.enqueue(this)
@@ -56,8 +57,13 @@ case class BTree[T](value: T, left: Option[BTree[T]], right: Option[BTree[T]]) e
     while (q.nonEmpty) {
       tree = q.dequeue()
 
-      if (tree.hasLeft) q.enqueue(tree.left.get)
-      if (tree.hasRight) q.enqueue(tree.right.get)
+      if (leftToRight) {
+        if (tree.hasLeft) q.enqueue(tree.left.get)
+        if (tree.hasRight) q.enqueue(tree.right.get)
+      } else {
+        if (tree.hasRight) q.enqueue(tree.right.get)
+        if (tree.hasLeft) q.enqueue(tree.left.get)
+      }
 
       f(tree)
     }
@@ -95,6 +101,192 @@ case class BTree[T](value: T, left: Option[BTree[T]], right: Option[BTree[T]]) e
         }
       }
     }
+  }
+
+  def reverseLevelTraversal(f: BTree[T] => Unit): Unit = {
+    val stack: mutable.ArrayStack[BTree[T]] = mutable.ArrayStack[BTree[T]]()
+    this.traverseLevel(leftToRight = false)(stack.push)
+    while (stack.nonEmpty) f(stack.pop)
+  }
+
+  def sideToSideTraversal(leftToRight: Boolean = true)(f: BTree[T] => Unit): Unit = {
+    val q1: mutable.Queue[BTree[T]] = mutable.Queue[BTree[T]]()
+    val q2: mutable.Queue[BTree[T]] = mutable.Queue[BTree[T]]()
+    var stack1: mutable.ArrayStack[BTree[T]] = new mutable.ArrayStack[BTree[T]]()
+    var stack2: mutable.ArrayStack[BTree[T]] = new mutable.ArrayStack[BTree[T]]()
+
+    q1.enqueue(this)
+
+    while (q1.nonEmpty || q2.nonEmpty) {
+      if (q1.nonEmpty) {
+        while (q1.nonEmpty) {
+          val q1Tree = q1.dequeue()
+          if (q1Tree.hasRight) q2.enqueue(q1Tree.right.get)
+          if (q1Tree.hasLeft) q2.enqueue(q1Tree.left.get)
+
+          stack1.push(q1Tree)
+        }
+
+        while (stack1.nonEmpty) {
+          f(stack1.pop)
+          stack1 = stack1.reverse
+        }
+      } else if (q2.nonEmpty) {
+        while (q2.nonEmpty) {
+          val q2Tree = q2.dequeue()
+          if (q2Tree.hasRight) q1.enqueue(q2Tree.right.get)
+          if (q2Tree.hasLeft) q1.enqueue(q2Tree.left.get)
+
+          stack2.push(q2Tree)
+        }
+
+        while (stack2.nonEmpty) {
+          f(stack2.pop)
+          stack2 = stack2.reverse
+        }
+      }
+    }
+  }
+
+  def sideViewTraversal(left: Boolean = true)(f: BTree[T] => Unit): Unit = {
+    val q1 = mutable.Queue[BTree[T]]()
+    val q2 = mutable.Queue[BTree[T]]()
+    var touched: Boolean = false
+
+    q1.enqueue(this)
+
+    while (q1.nonEmpty || q2.nonEmpty) {
+      touched = false
+      if (q1.nonEmpty) {
+        while (q1.nonEmpty) {
+          val tree = q1.dequeue()
+          if (left) {
+            if (tree.hasLeft) q2.enqueue(tree.left.get)
+            if (tree.hasRight) q2.enqueue(tree.right.get)
+          } else {
+            if (tree.hasRight) q2.enqueue(tree.right.get)
+            if (tree.hasLeft) q2.enqueue(tree.left.get)
+          }
+
+          if (!touched) {
+            touched = true
+            f(tree)
+          }
+        }
+      } else if (q2.nonEmpty) {
+        while (q2.nonEmpty) {
+          val tree = q2.dequeue()
+          if (left) {
+            if (tree.hasLeft) q1.enqueue(tree.left.get)
+            if (tree.hasRight) q1.enqueue(tree.right.get)
+          } else {
+            if (tree.hasRight) q1.enqueue(tree.right.get)
+            if (tree.hasLeft) q1.enqueue(tree.left.get)
+          }
+
+          if (!touched) {
+            touched = true
+            f(tree)
+          }
+        }
+      }
+    }
+  }
+
+  def bottomViewTraversal(f: BTree[T] => Unit): Unit = {
+    val lanes = mutable.SortedMap[Int, mutable.ArrayStack[BTree[T]]]()
+    val q = mutable.Queue[(BTree[T], Int)]()
+
+    q.enqueue((this, 0))
+
+    while (q.nonEmpty) {
+      val treeTuple = q.dequeue
+      val tree = treeTuple._1
+      val lane = treeTuple._2
+
+      if (tree.hasLeft) q.enqueue((tree.left.get, lane - 1))
+      if (tree.hasRight) q.enqueue((tree.right.get, lane + 1))
+
+      val stack = if (lanes.contains(lane)) lanes(lane) else new mutable.ArrayStack[BTree[T]]()
+      stack.push(tree)
+      lanes(lane) = stack
+    }
+
+    lanes.toList.foreach(intAndStack => {
+      val (_, stack) = intAndStack
+      f(stack.pop)
+    })
+  }
+
+  def topViewTraversal(f: BTree[T] => Unit): Unit = {
+    val lanes = mutable.SortedMap[Int, BTree[T]]()
+    val q = mutable.Queue[(BTree[T], Int)]()
+
+    q.enqueue((this, 0))
+
+    while (q.nonEmpty) {
+      val treeTuple = q.dequeue()
+      val tree = treeTuple._1
+      val lane = treeTuple._2
+
+      if (tree.hasLeft) q.enqueue((tree.left.get, lane -1))
+      if (tree.hasRight) q.enqueue((tree.right.get, lane + 1))
+
+      if (!lanes.contains(lane)) lanes(lane) = tree
+    }
+
+    lanes.toList.foreach(laneAndTree => {
+      val (_, tree) = laneAndTree
+      f(tree)
+    })
+  }
+
+  def nextNode(node: BTree[T]): Option[BTree[T]] = {
+    val q1 = mutable.Queue[BTree[T]]()
+    val q2 = mutable.Queue[BTree[T]]()
+
+    q1.enqueue(this)
+
+    while (q1.nonEmpty || q2.nonEmpty) {
+      if (q1.nonEmpty) {
+        while (q1.nonEmpty) {
+          val tree = q1.dequeue
+          if (tree == node) return if (q1.nonEmpty) Option(q1.dequeue) else None
+          if (tree.hasLeft) q2.enqueue(tree.left.get)
+          if (tree.hasRight) q2.enqueue(tree.right.get)
+        }
+      }
+      if (q2.nonEmpty) {
+        while (q2.nonEmpty) {
+          val tree = q2.dequeue
+          if (tree == node) return if (q2.nonEmpty) Option(q2.dequeue) else None
+          if (tree.hasLeft) q1.enqueue(tree.left.get)
+          if (tree.hasRight) q1.enqueue(tree.right.get)
+        }
+      }
+    }
+
+    None
+  }
+
+  def isComplete: Boolean = {
+    val q1 = mutable.Queue[BTree[T]]()
+    val buf: ListBuffer[T] = ListBuffer()
+
+    q1.enqueue(this)
+
+    while (q1.nonEmpty) {
+      val tree = q1.dequeue
+      buf += tree.value
+      if (tree.hasLeft) q1.enqueue(tree.left.get)
+      if (tree.hasRight) q1.enqueue(tree.right.get)
+    }
+
+    val levelOrder: List[T] = buf.toList
+
+    val inOrderTree: BTree[T] = BTree.buildTree(levelOrder: _*)
+
+    inOrderTree == this
   }
 }
 
