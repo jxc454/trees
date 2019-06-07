@@ -187,4 +187,18 @@ class BTreeTest extends FlatSpec with MustMatchers {
     BTree.buildTree(1, 2, 3, 4, 5, 6, 7).isComplete must be(true)
     BTree(1, None, Option(BTree(2))).isComplete must be(false)
   }
+
+  "cousins" should "identify cousin nodes" in {
+    val tree = BTree.buildTree(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
+
+    tree.firstCousins(tree.left.get.left.get, tree.right.get.right.get) must be(true)
+    tree.left.get.firstCousins(tree.left.get.left.get.right.get, tree.left.get.right.get.left.get) must be(true)
+    tree.firstCousins(tree.left.get.left.get, tree.right.get.right.get.left.get) must be(false)
+  }
+
+  "findCousins" should "find cousins" in {
+    val tree = BTree.buildTree(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
+    tree.findCousins(tree.left.get.right.get).map(_.map(_.value)).get must be(Seq(6, 7))
+    tree.findCousins(tree.left.get.right.get.left.get).map(_.map(_.value)).get must be(Seq(8, 9, 12, 13, 14, 15))
+  }
 }

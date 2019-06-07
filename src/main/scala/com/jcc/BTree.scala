@@ -288,6 +288,69 @@ case class BTree[T](value: T, left: Option[BTree[T]], right: Option[BTree[T]]) e
 
     inOrderTree == this
   }
+
+  def firstCousins(node1: BTree[T], node2: BTree[T]): Boolean = {
+    var foundNode1: Boolean = false
+    var foundNode2: Boolean = false
+    val q = mutable.Queue[BTree[T]]()
+
+    q.enqueue(this)
+
+    while (q.nonEmpty && !foundNode1 && !foundNode2) {
+      val tree = q.dequeue
+
+      if (tree.hasLeft) q.enqueue(tree.left.get)
+      if (tree.hasRight) q.enqueue(tree.right.get)
+
+      val (grandkids1: Seq[BTree[T]], grandkids2: Seq[BTree[T]]) = getKids(tree) match {
+        case Some(lChild :: rChild :: Nil) => (getKids(lChild).getOrElse(Seq()), getKids(rChild).getOrElse(Seq()))
+        case Some(child :: Nil) => (getKids(child).getOrElse(Seq()), Seq())
+        case None => (Seq(), Seq())
+        case Some(Nil) => (Seq(), Seq())
+      }
+
+      foundNode1 = (grandkids1 ++ grandkids2).contains(node1)
+      foundNode2 = (grandkids1 ++ grandkids2).contains(node2)
+
+      if (grandkids1.nonEmpty && grandkids2.nonEmpty) {
+        // compare
+        if ((grandkids1.contains(node1) && grandkids2.contains(node2)) ||
+          (grandkids1.contains(node2) && grandkids2.contains(node1))) return true
+      }
+    }
+
+    false
+  }
+
+  def findCousins(node: BTree[T]): Option[Seq[BTree[T]]] = {
+    val buf = mutable.ListBuffer[BTreeRich[T]]()
+
+    def checkNode(richNode: BTreeRich[T]): Unit = {
+      if (richNode.hasLeft) checkNode(richNode.left.get)
+      buf += richNode
+      if (richNode.hasRight) checkNode(richNode.right.get)
+    }
+
+    checkNode(BTreeRich(this, 1, None))
+
+    buf.find(_.node == node) match {
+      case Some(bTree) => Option(buf.filter(_.isCousin(bTree)).map(_.node))
+      case None => None
+    }
+  }
+
+  private def getChildrenAtLevel(left: Boolean)(level: Int): Option[Seq[BTree[T]]] = {
+    None
+  }
+
+  private def getLeftChildrenAtLevel(level: Int): Option[Seq[BTree[T]]] = getChildrenAtLevel(left = true)(level)
+  private def getRightChildrenAtLevel(level: Int): Option[Seq[BTree[T]]] = getChildrenAtLevel(left = false)(level)
+
+  private def getKids(node: BTree[T]): Option[Seq[BTree[T]]] = {
+    val kids = Seq(node.left, node.right).flatten
+    if (kids.isEmpty) None else Option(kids)
+  }
+
 }
 
 case class BSTreeOfInt(value: Int, left: Option[BSTreeOfInt], right: Option[BSTreeOfInt]) extends Tree[Int] {
