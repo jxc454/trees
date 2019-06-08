@@ -201,4 +201,19 @@ class BTreeTest extends FlatSpec with MustMatchers {
     tree.findCousins(tree.left.get.right.get).map(_.map(_.value)).get must be(Seq(6, 7))
     tree.findCousins(tree.left.get.right.get.left.get).map(_.map(_.value)).get must be(Seq(8, 9, 12, 13, 14, 15))
   }
+
+  "sumTree" should "create a new sum tree" in {
+    val tree: BTree[Int] = BTree.buildTree(Seq.fill(math.pow(2, 4).toInt - 1)(1): _*)
+    val buf: mutable.ListBuffer[Int] = mutable.ListBuffer()
+    BTree.sumTree(tree).traverseInOrder(buf += _)
+
+    buf must be(Seq(0, 2, 0, 6, 0, 2, 0, 14, 0, 2, 0, 6, 0, 2, 0))
+  }
+
+  "allWords" should "build all words from a list of Ints" in {
+    BTree.allWords(_ <= 26)(List(1, 2)).map(_.map(alphabet(_)).mkString("")) must be(List("ab", "l"))
+    BTree.allWords(_ <= 26)(List(1, 6, 6, 2)).map(_.map(alphabet(_)).mkString("")) must be(List("affb", "pfb"))
+    BTree.allWords(_ <= 26)(List(1, 1, 1)).map(_.map(alphabet(_)).mkString("")) must be(List("aaa", "ak", "ka"))
+    BTree.allWords(_ <= 26)(List()) must be(List())
+  }
 }

@@ -48,6 +48,12 @@ case class BTree[T](value: T, left: Option[BTree[T]], right: Option[BTree[T]]) e
     BTree(newValue, left, right)
   }
 
+  def traverseInOrder(f: T => Unit): Unit = {
+    if (this.hasLeft) this.left.get.traverseInOrder(f)
+    f(this.value)
+    if (this.hasRight) this.right.get.traverseInOrder(f)
+  }
+
   def traverseLevel(leftToRight: Boolean = true)(f: BTree[T] => Unit): Unit = {
     val q: mutable.Queue[BTree[T]] = new mutable.Queue[BTree[T]]()
 
@@ -393,6 +399,66 @@ object BTree {
       case BTree(_, None, None) =>
     }
     // tree.delete
+  }
+
+  def sumTree(node: BTree[Int]): BTree[Int] = {
+    val newLeft = if (node.hasLeft) Option(sumTree(node.left.get)) else None
+    val newRight = if (node.hasRight) Option(sumTree(node.right.get)) else None
+    val newValue =
+      (if (node.hasLeft) node.left.get.value else 0) +
+      (if (node.hasRight) node.right.get.value else 0) +
+      (if (newLeft.isDefined) newLeft.get.value else 0) +
+      (if (newRight.isDefined) newRight.get.value else 0)
+
+    BTree(newValue, newLeft, newRight)
+  }
+
+  def allWords(rightPredicate: Int => Boolean)(globalNums: List[Int]): List[List[Int]] = {
+    val memo: mutable.Map[Int, List[List[Int]]] = mutable.Map[Int, List[List[Int]]]()
+
+    val getSecondHead: (Int, Int) => Option[Int] = (num1, num2) => Option(num1 * 10 + num2).filter(rightPredicate)
+
+    def allWordsHelper(nums: List[Int], currentIndex: Int): List[List[Int]] = {
+
+      val (head: Option[Int], tail: Option[List[Int]]) = nums match {
+        case Nil => (None, None)
+        case h :: Nil => (Option(h), None)
+        case h :: t => (Option(h), Option(t))
+      }
+
+      val (secondHead: Option[Int], secondTail: Option[List[Int]]) = tail match {
+        case None => (None, None)
+        case Some(Nil) => (None, None)
+        case Some(h :: Nil) => (getSecondHead(head.get, h), None)
+        case Some(h :: t) => {
+          val opSecondHead = getSecondHead(head.get, h)
+          (opSecondHead, opSecondHead.map(_ => t))
+        }
+      }
+
+      if (!memo.contains(currentIndex)) {
+        val headResult: Option[List[List[Int]]] = tail
+          .map(t => allWordsHelper(t, currentIndex + 1))
+          .map(_.map(list => head.get :: list)) match {
+            case None => if (head.isDefined) Option(List(List(head.get))) else None
+            case Some(list) => Option(list)
+        }
+
+        val secondHeadResult: Option[List[List[Int]]] = secondTail
+          .map(t => allWordsHelper(t, currentIndex + 2))
+          .map(_.map(list => secondHead.get :: list)) match {
+            case None => if (secondHead.isDefined) Option(List(List(secondHead.get))) else None
+            case Some(list) => Option(list)
+        }
+
+        headResult match {
+          case Some(res1) => memo += (currentIndex -> (res1 ::: secondHeadResult.getOrElse(List())))
+          case None =>
+        }
+      }
+      memo.getOrElse(currentIndex, List())
+    }
+    allWordsHelper(globalNums, 0)
   }
 }
 
