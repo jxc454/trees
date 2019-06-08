@@ -345,6 +345,59 @@ case class BTree[T](value: T, left: Option[BTree[T]], right: Option[BTree[T]]) e
     }
   }
 
+  def matchValues(node: BTree[T]): Boolean = {
+    def inOrderTraversal(tree: BTree[T])(f: T => Unit): Unit = {
+      if (tree.hasLeft) inOrderTraversal(tree.left.get)(f)
+      f(tree.value)
+      if (tree.hasRight) inOrderTraversal(tree.right.get)(f)
+    }
+
+    // get in-order traversal of node
+    val nodeTraversal: mutable.ListBuffer[T] = mutable.ListBuffer()
+    inOrderTraversal(node)(nodeTraversal += _)
+
+    def innerMatchValues(node: BTree[T], parentNode: BTree[T]): Boolean = {
+      // does node value match
+      if (parentNode.value == node.value) {
+        // get in-order traversal of the matching node
+        val matchingNodeTraversal: mutable.ListBuffer[T] = mutable.ListBuffer()
+        inOrderTraversal(parentNode)(matchingNodeTraversal += _)
+
+        if (nodeTraversal == matchingNodeTraversal) true else false
+      } else if (parentNode.hasLeft) {
+        innerMatchValues(node, parentNode.left.get)
+      } else if (parentNode.hasRight) {
+        innerMatchValues(node, parentNode.right.get)
+      } else false
+    }
+
+    innerMatchValues(node, this)
+  }
+
+  def matchValuesBetter(node: BTree[T]): Boolean = {
+    def inOrderTraversal(tree: BTree[T])(f: T => Unit): Unit = {
+      if (tree.hasLeft) inOrderTraversal(tree.left.get)(f)
+      f(tree.value)
+      if (tree.hasRight) inOrderTraversal(tree.right.get)(f)
+    }
+
+    def preOrderTraversal(tree: BTree[T])(f: T => Unit): Unit = {
+      f(tree.value)
+      if (tree.hasLeft) preOrderTraversal(tree.left.get)(f)
+      if (tree.hasRight) preOrderTraversal(tree.right.get)(f)
+    }
+
+    // an in-order and pre/post-order uniquely ID a binary tree
+    val nodeInOrder, nodePreOrder, treeInOrder, treePreOrder = ListBuffer[T]()
+
+    inOrderTraversal(node)(nodeInOrder += _)
+    inOrderTraversal(this)(treeInOrder += _)
+    preOrderTraversal(node)(nodePreOrder += _)
+    preOrderTraversal(this)(treePreOrder += _)
+
+    treeInOrder.intersect(nodeInOrder).nonEmpty && treePreOrder.intersect(nodePreOrder).nonEmpty
+  }
+
   private def getChildrenAtLevel(left: Boolean)(level: Int): Option[Seq[BTree[T]]] = {
     None
   }

@@ -216,4 +216,19 @@ class BTreeTest extends FlatSpec with MustMatchers {
     BTree.allWords(_ <= 26)(List(1, 1, 1)).map(_.map(alphabet(_)).mkString("")) must be(List("aaa", "ak", "ka"))
     BTree.allWords(_ <= 26)(List()) must be(List())
   }
+
+  "matchValues" should "find a subtree within another tree" in {
+    val matchTree: BTree[Int] = BTree.buildTree(2, 4, 5)
+
+    BTree.buildTree(1, 2, 3, 4, 5, 6, 7).matchValues(matchTree) must be(true)
+    BTree.buildTree(2, 4, 5, 4, 5, 6, 7).matchValues(matchTree) must be(false)
+    BTree.buildTree(7, 6, 5, 4, 3, 2, 1, 0).matchValues(BTree.buildTree(4, 0)) must be(true)
+  }
+  "matchValuesBetter" should "find a subtree within another tree" in {
+    val matchTree: BTree[Int] = BTree.buildTree(2, 4, 5)
+
+    BTree.buildTree(1, 2, 3, 4, 5, 6, 7).matchValues(matchTree) must be(true)
+    BTree.buildTree(2, 4, 5, 4, 5, 6, 7).matchValues(matchTree) must be(false)
+    BTree.buildTree(7, 6, 5, 4, 3, 2, 1, 0).matchValues(BTree.buildTree(4, 0)) must be(true)
+  }
 }
