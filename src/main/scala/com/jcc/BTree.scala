@@ -398,6 +398,23 @@ case class BTree[T](value: T, left: Option[BTree[T]], right: Option[BTree[T]]) e
     treeInOrder.intersect(nodeInOrder).nonEmpty && treePreOrder.intersect(nodePreOrder).nonEmpty
   }
 
+  def diameter: Int = {
+    var max: Int = 0
+    def getMaxLength(node: BTree[T]): Int = {
+      val leftLength: Int = node.left.map(getMaxLength).getOrElse(0)
+      val rightLength: Int = node.right.map(getMaxLength).getOrElse(0)
+
+      val lengthOfPathThrough: Int = 1 + leftLength + rightLength
+      val maxPathLengthUpTo: Int = 1 + math.max(leftLength, rightLength)
+
+      if (lengthOfPathThrough > max) max = lengthOfPathThrough
+      maxPathLengthUpTo
+    }
+
+    getMaxLength(this)
+    max
+  }
+
   private def getChildrenAtLevel(left: Boolean)(level: Int): Option[Seq[BTree[T]]] = {
     None
   }

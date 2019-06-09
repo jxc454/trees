@@ -224,11 +224,25 @@ class BTreeTest extends FlatSpec with MustMatchers {
     BTree.buildTree(2, 4, 5, 4, 5, 6, 7).matchValues(matchTree) must be(false)
     BTree.buildTree(7, 6, 5, 4, 3, 2, 1, 0).matchValues(BTree.buildTree(4, 0)) must be(true)
   }
+
   "matchValuesBetter" should "find a subtree within another tree" in {
     val matchTree: BTree[Int] = BTree.buildTree(2, 4, 5)
 
     BTree.buildTree(1, 2, 3, 4, 5, 6, 7).matchValues(matchTree) must be(true)
     BTree.buildTree(2, 4, 5, 4, 5, 6, 7).matchValues(matchTree) must be(false)
     BTree.buildTree(7, 6, 5, 4, 3, 2, 1, 0).matchValues(BTree.buildTree(4, 0)) must be(true)
+  }
+
+  "diameter" should "find the diameter of the tree" in {
+    val f: BTree[Char] = BTree('f')
+    val e: BTree[Char] = BTree('e', None, Option(f))
+    val d: BTree[Char] = BTree('d')
+    val b: BTree[Char] = BTree('b', d, e)
+    val c: BTree[Char] = BTree('c')
+    val a: BTree[Char] = BTree('a', b, c)
+
+    a.diameter must be(5)
+    b.diameter must be(4)
+    d.diameter must be(1)
   }
 }
