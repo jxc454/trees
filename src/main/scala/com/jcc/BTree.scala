@@ -415,6 +415,38 @@ case class BTree[T](value: T, left: Option[BTree[T]], right: Option[BTree[T]]) e
     max
   }
 
+  def symmetric: Boolean = {
+    def getPath(node: BTree[T]): List[Int] = {
+      val leftPath = node.left.map(0 :: getPath(_)).getOrElse(Nil)
+      val rightPath = node.right.map(1 :: getPath(_)).getOrElse(Nil)
+      leftPath ::: rightPath
+    }
+
+    if (!this.hasLeft || !this.hasRight) return false
+
+    val leftSide: List[Int] = 0 :: getPath(this.left.get)
+    val rightSide: List[Int] = 1 :: getPath(this.right.get)
+
+    if (leftSide.length == rightSide.length) {
+      !leftSide.zip(rightSide).map(leftRight => leftRight._1 + leftRight._2).exists(_ != 1)
+    } else false
+  }
+
+  def symmetric2: Boolean = {
+    def getSymmetric(node1: Option[BTree[T]], node2: Option[BTree[T]]): Boolean = {
+      if (node1.isEmpty && node2.isEmpty) {
+        true
+      } else if (node1.isDefined && node2.isDefined) {
+        getSymmetric(node1.flatMap(_.left), node2.flatMap(_.right)) &&
+          getSymmetric(node1.flatMap(_.right), node2.flatMap(_.left))
+      } else false
+    }
+
+    getSymmetric(this.left, this.right)
+  }
+
+  def mirror: BTree[T] = BTree(this.value, this.right.map(_.mirror), this.left.map(_.mirror))
+
   private def getChildrenAtLevel(left: Boolean)(level: Int): Option[Seq[BTree[T]]] = {
     None
   }

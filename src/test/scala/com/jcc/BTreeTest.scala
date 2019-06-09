@@ -245,4 +245,47 @@ class BTreeTest extends FlatSpec with MustMatchers {
     b.diameter must be(4)
     d.diameter must be(1)
   }
+
+  "symmetric" should "identify a symmetric tree" in {
+    BTree.buildTree(1, 2, 3).symmetric must be(true)
+    BTree.buildTree(1, 2, 3, 4).symmetric must be(false)
+
+    val d: BTree[Char] = BTree('d')
+    val e: BTree[Char] = BTree('e')
+    val b: BTree[Char] = BTree('b', None, Option(d))
+    val c: BTree[Char] = BTree('c', Option(e), None)
+    val a: BTree[Char] = BTree('a', b, c)
+
+    a.symmetric must be(true)
+  }
+
+  "symmetric2" should "identify a symmetric tree" in {
+    BTree.buildTree(1, 2, 3).symmetric2 must be(true)
+    BTree.buildTree(1, 2, 3, 4).symmetric2 must be(false)
+
+    val d: BTree[Char] = BTree('d')
+    val e: BTree[Char] = BTree('e')
+    val b: BTree[Char] = BTree('b', None, Option(d))
+    val c: BTree[Char] = BTree('c', Option(e), None)
+    val a: BTree[Char] = BTree('a', b, c)
+
+    a.symmetric2 must be(true)
+  }
+
+  "mirror" should "produce a mirror of a tree" in {
+    BTree.buildTree(1, 2, 3).mirror must be(BTree.buildTree(1, 3, 2))
+    BTree.buildTree(1, 2, 3).mirror must be(BTree.buildTree(1, 3, 2))
+
+    val d: BTree[Char] = BTree('d')
+    val e: BTree[Char] = BTree('e')
+    val b: BTree[Char] = BTree('b', None, Option(d))
+    val c: BTree[Char] = BTree('c', Option(e), None)
+    val a: BTree[Char] = BTree('a', b, c)
+
+    val b2: BTree[Char] = BTree('b', Option(d), None)
+    val c2: BTree[Char] = BTree('c', None, Option(e))
+    val a2: BTree[Char] = BTree('a', c2, b2)
+
+    a.mirror must be(a2)
+  }
 }
