@@ -288,4 +288,10 @@ class BTreeTest extends FlatSpec with MustMatchers {
 
     a.mirror must be(a2)
   }
+
+  "flatten" should "flatten a tree to the right" in {
+    BTree.buildTree(1, 2, 3, 4, 5).flatten must be(
+      BTree(1, None, Some(BTree(2, None, Some(BTree(4, None, Some(BTree(5, None, Some(BTree(3, None, None)))))))))
+    )
+  }
 }

@@ -447,6 +447,17 @@ case class BTree[T](value: T, left: Option[BTree[T]], right: Option[BTree[T]]) e
 
   def mirror: BTree[T] = BTree(this.value, this.right.map(_.mirror), this.left.map(_.mirror))
 
+  def flatten: BTree[T] = this match {
+    case BTree(_, None, None) => this
+    case BTree(v, None, Some(r)) => new BTree(v, None, Option(r.flatten))
+    case BTree(v, Some(l), None) => new BTree(v, None, Option(l.flatten))
+    case BTree(v, Some(l), Some(r)) => new BTree(v, None, Option(appendToFarRight(l.flatten, r.flatten)))
+  }
+
+  def equalBySwap(node: BTree[T]): Boolean = {
+
+  }
+
   private def getChildrenAtLevel(left: Boolean)(level: Int): Option[Seq[BTree[T]]] = {
     None
   }
@@ -459,6 +470,10 @@ case class BTree[T](value: T, left: Option[BTree[T]], right: Option[BTree[T]]) e
     if (kids.isEmpty) None else Option(kids)
   }
 
+  private def appendToFarRight(node1: BTree[T], appendMe: BTree[T]): BTree[T] = node1 match {
+    case BTree(v, l, None) => new BTree(v, l, Option(appendMe))
+    case BTree(v, l, r) => new BTree(v, l, Option(appendToFarRight(r.get, appendMe)))
+  }
 }
 
 case class BSTreeOfInt(value: Int, left: Option[BSTreeOfInt], right: Option[BSTreeOfInt]) extends Tree[Int] {
@@ -562,6 +577,7 @@ object BTree {
     }
     allWordsHelper(globalNums, 0)
   }
+
 }
 
 object MergeSortAsc {
