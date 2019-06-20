@@ -454,8 +454,14 @@ case class BTree[T](value: T, left: Option[BTree[T]], right: Option[BTree[T]]) e
     case BTree(v, Some(l), Some(r)) => new BTree(v, None, Option(appendToFarRight(l.flatten, r.flatten)))
   }
 
-  def equalBySwap(node: BTree[T]): Boolean = {
+  def canMatchWithChildSwap(node: BTree[T]): Boolean = {
+    // node values are different
+    if (node.value != this.value) return false
 
+    (this.left.forall(_.canMatchWithChildSwap(node.left.getOrElse(BTree.buildTree()))) ||
+      this.left.forall(_.canMatchWithChildSwap(node.right.getOrElse(BTree.buildTree())))) &&
+    (this.right.forall(_.canMatchWithChildSwap(node.left.getOrElse(BTree.buildTree()))) ||
+      this.right.forall(_.canMatchWithChildSwap(node.right.getOrElse(BTree.buildTree()))))
   }
 
   private def getChildrenAtLevel(left: Boolean)(level: Int): Option[Seq[BTree[T]]] = {

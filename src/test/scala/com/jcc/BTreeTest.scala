@@ -294,4 +294,14 @@ class BTreeTest extends FlatSpec with MustMatchers {
       BTree(1, None, Some(BTree(2, None, Some(BTree(4, None, Some(BTree(5, None, Some(BTree(3, None, None)))))))))
     )
   }
+
+  "canMatchWithChaildSwap" should "return true if trees can match by swapping children" in {
+    BTree.buildTree(1, 2, 3).canMatchWithChildSwap(BTree.buildTree(1, 3, 2)) must be(true)
+    BTree.buildTree(1, 2, 3).canMatchWithChildSwap(BTree.buildTree(1, 2, 3)) must be(true)
+    BTree.buildTree(1, 2, 3).canMatchWithChildSwap(BTree.buildTree(1, 4, 3)) must be(false)
+    BTree.buildTree(1, 2, 3, 4, 5, 6, 7)
+      .canMatchWithChildSwap(BTree.buildTree(1, 2, 3, 6, 7, 4, 5)) must be(false)
+    BTree.buildTree(1, 2, 3, 4, 5, 6, 7)
+      .canMatchWithChildSwap(BTree.buildTree(1, 3, 2, 7, 6, 4, 5)) must be(true)
+  }
 }
