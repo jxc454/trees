@@ -464,6 +464,26 @@ case class BTree[T](value: T, left: Option[BTree[T]], right: Option[BTree[T]]) e
       this.right.forall(_.canMatchWithChildSwap(node.right.getOrElse(BTree.buildTree()))))
   }
 
+  // given that node1 and node2 are in this tree
+  def LCA(node1: BTree[T], node2: BTree[T]): BTree[T] = {
+    def innerLCA(tree: BTree[T], node1: BTree[T], node2: BTree[T]): Option[BTree[T]] = {
+      if (tree.value == node1.value) return Option(tree)
+      if (tree.value == node2.value) return Option(tree)
+
+      val leftSide = tree.left.flatMap(t => innerLCA(t, node1, node2))
+      val rightSide = tree.right.flatMap(t => innerLCA(t, node1, node2))
+
+      (leftSide, rightSide) match {
+        case (Some(_), Some(_)) => Option(tree)
+        case (Some(l), None) => Some(l)
+        case (None, Some(r)) => Some(r)
+        case _ => None
+      }
+    }
+
+    innerLCA(this, node1, node2).get
+  }
+
   private def getChildrenAtLevel(left: Boolean)(level: Int): Option[Seq[BTree[T]]] = {
     None
   }

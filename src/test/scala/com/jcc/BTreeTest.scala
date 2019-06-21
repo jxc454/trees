@@ -304,4 +304,12 @@ class BTreeTest extends FlatSpec with MustMatchers {
     BTree.buildTree(1, 2, 3, 4, 5, 6, 7)
       .canMatchWithChildSwap(BTree.buildTree(1, 3, 2, 7, 6, 4, 5)) must be(true)
   }
+
+  "LCA" should "find lowest common ancestor of two nodes" in {
+    val tree = BTree.buildTree(1, 2, 3, 4, 5, 6, 7, 8, 9)
+    tree.LCA(BTree.buildTree(2), BTree.buildTree(9)).value must be(2)
+    tree.LCA(BTree.buildTree(3), BTree.buildTree(9)).value must be(1)
+    tree.LCA(BTree.buildTree(1), BTree.buildTree(5)).value must be(1)
+    tree.LCA(BTree.buildTree(8), BTree.buildTree(9)).value must be(4)
+  }
 }
