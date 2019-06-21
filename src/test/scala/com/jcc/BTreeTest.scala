@@ -312,4 +312,11 @@ class BTreeTest extends FlatSpec with MustMatchers {
     tree.LCA(BTree.buildTree(1), BTree.buildTree(5)).value must be(1)
     tree.LCA(BTree.buildTree(8), BTree.buildTree(9)).value must be(4)
   }
+
+  "pathsToLeafs" should "return a list of paths from root node to leaf nodes" in {
+    val tree = BTree.buildTree(1, 2, 3, 4, 5, 6, 7, 8, 9)
+    tree.pathsToLeafs must be(List(
+      List(1, 2, 4, 8), List(1, 2, 4, 9), List(1, 2, 5), List(1, 3, 6), List(1, 3, 7),
+    ))
+  }
 }

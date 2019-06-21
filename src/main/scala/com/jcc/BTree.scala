@@ -484,6 +484,18 @@ case class BTree[T](value: T, left: Option[BTree[T]], right: Option[BTree[T]]) e
     innerLCA(this, node1, node2).get
   }
 
+  def pathsToLeafs: List[List[T]] = {
+    def innerPaths(tree: BTree[T]): List[List[T]] = {
+      (tree.left.map(node => innerPaths(node)), tree.right.map(node => innerPaths(node))) match {
+        case (Some(l), Some(r)) => l.map(tree.value :: _) ++ r.map(tree.value :: _)
+        case (None, None) => List(List(tree.value))
+        case (Some(l), None) => l.map(tree.value :: _)
+        case (None, Some(r)) => r.map(tree.value :: _)
+      }
+    }
+    innerPaths(this)
+  }
+
   private def getChildrenAtLevel(left: Boolean)(level: Int): Option[Seq[BTree[T]]] = {
     None
   }
