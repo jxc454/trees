@@ -3,7 +3,7 @@ package com.jcc
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-trait Tree[T]
+sealed trait Tree[T]
 
 case class BTree[T](value: T, left: Option[BTree[T]], right: Option[BTree[T]]) extends Tree[T] {
   def hasLeft: Boolean = left.isDefined
@@ -494,6 +494,34 @@ case class BTree[T](value: T, left: Option[BTree[T]], right: Option[BTree[T]]) e
       }
     }
     innerPaths(this)
+  }
+
+  def ancestors(node: BTree[T]): List[BTree[T]] = {
+    def findNode(tree: BTree[T], node: BTree[T], ancestors: List[BTree[T]]): List[BTree[T]] = {
+      if (tree == node) {
+        ancestors
+      } else {
+        tree.left.map(l => findNode(l, node, tree :: ancestors)).getOrElse(List()) ++
+          tree.right.map(r => findNode(r, node, tree :: ancestors)).getOrElse(List())
+      }
+    }
+
+    findNode(this, node, Nil).reverse
+  }
+
+  def distance(node1: BTree[T], node2: BTree[T]): Int = {
+    def innerDistance(tree: BTree[T], node1: BTree[T], node2: BTree[T]): Int = {
+      val left = tree.left.map(l => innerDistance(l, node2, node1)).getOrElse(0)
+      val right = tree.right.map(r => innerDistance(r, node2, node1)).getOrElse(0)
+
+      if (tree == node1 || tree == node2) {
+        if (left == 0 && right == 0) 1 else left + right
+      } else {
+        if (left == 0 && right == 0) 0 else 1 + left + right
+      }
+    }
+
+    innerDistance(this, node1, node2) - 1
   }
 
   private def getChildrenAtLevel(left: Boolean)(level: Int): Option[Seq[BTree[T]]] = {

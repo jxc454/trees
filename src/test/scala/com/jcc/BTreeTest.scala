@@ -319,4 +319,16 @@ class BTreeTest extends FlatSpec with MustMatchers {
       List(1, 2, 4, 8), List(1, 2, 4, 9), List(1, 2, 5), List(1, 3, 6), List(1, 3, 7),
     ))
   }
+
+  "ancestors" should "find ancestors of a node" in {
+    val tree = BTree.buildTree(1, 2, 3, 4, 5, 6, 7, 8, 9)
+    tree.ancestors(BTree(9)).map(_.value) must be(Seq(1, 2, 4))
+  }
+
+  "distance" should "calculate distance between nodes" in {
+    val tree = BTree.buildTree(1, 2, 3)
+    tree.distance(BTree(2), BTree(3)) must be(2)
+    val tree2 = BTree.buildTree(1, 2, 3, 4, 5, 6, 7, 8, 9)
+    tree2.distance(BTree.buildTree(8), BTree.buildTree(7)) must be(5)
+  }
 }
