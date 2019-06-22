@@ -596,6 +596,41 @@ object BTree {
     BTree(newValue, newLeft, newRight)
   }
 
+  def verticalSum(tree: BSTreeOfInt): Seq[Int] = {
+    val sums: mutable.Map[Int, Int] = mutable.Map[Int, Int]()
+
+    def innerVerticalSum(innerTree: BSTreeOfInt, longitude: Int): Unit = {
+      if (sums.contains(longitude)) {
+        sums.update(longitude, sums(longitude) + innerTree.value)
+      } else {
+        sums += (longitude -> innerTree.value)
+      }
+      innerTree.left.foreach(l => innerVerticalSum(l, longitude - 1))
+      innerTree.right.foreach(r => innerVerticalSum(r, longitude + 1))
+    }
+
+    innerVerticalSum(tree, 0)
+    sums.toSeq.sortBy(_._1).map(_._2)
+  }
+
+  def diagonalSum(tree: BSTreeOfInt): Seq[Int] = {
+    val diagonals: mutable.Map[Int, Int] = mutable.Map()
+
+    def innerDiagonalSum(innerTree: BSTreeOfInt, latitude: Int, longitude: Int): Unit = {
+      val key: Int = latitude - longitude
+      if (diagonals.contains(key)) {
+        diagonals.update(key, diagonals(key) + innerTree.value)
+      } else {
+        diagonals += (key -> innerTree.value)
+      }
+      innerTree.left.foreach(l => innerDiagonalSum(l, latitude + 1, longitude - 1))
+      innerTree.right.foreach(r => innerDiagonalSum(r, latitude + 1, longitude + 1))
+    }
+
+    innerDiagonalSum(tree, 0, 0)
+    diagonals.toSeq.sortBy(_._1).map(_._2)
+  }
+
   def allWords(rightPredicate: Int => Boolean)(globalNums: List[Int]): List[List[Int]] = {
     val memo: mutable.Map[Int, List[List[Int]]] = mutable.Map[Int, List[List[Int]]]()
 

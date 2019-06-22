@@ -331,4 +331,15 @@ class BTreeTest extends FlatSpec with MustMatchers {
     val tree2 = BTree.buildTree(1, 2, 3, 4, 5, 6, 7, 8, 9)
     tree2.distance(BTree.buildTree(8), BTree.buildTree(7)) must be(5)
   }
+
+  "verticalSum" should "calculate vertical sum of a tree" in {
+    val left, right = BTree.buildBSTreeOfInt(1, 2, 3, 4, 5)
+    val tree = BSTreeOfInt(0, left, right)
+    BTree.verticalSum(tree) must be (Seq(1, 2, 8, 7, 7, 5))
+  }
+
+  "diagonalSum" should "sum negative slope digaonals in a tree of Int" in {
+    val tree: BSTreeOfInt = BTree.buildBSTreeOfInt(1, 2, 3, 4, 5, 6, 7).get
+    BTree.diagonalSum(tree) must be(Seq(17, 10, 1))
+  }
 }
