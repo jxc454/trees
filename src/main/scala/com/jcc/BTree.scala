@@ -524,12 +524,53 @@ case class BTree[T](value: T, left: Option[BTree[T]], right: Option[BTree[T]]) e
     innerDistance(this, node1, node2) - 1
   }
 
-  private def getChildrenAtLevel(left: Boolean)(level: Int): Option[Seq[BTree[T]]] = {
-    None
+  def corners: List[BTree[T]] = {
+    val q1: mutable.Queue[BTree[T]] = mutable.Queue()
+    val q2: mutable.Queue[BTree[T]] = mutable.Queue()
+    val corners: mutable.ListBuffer[Option[BTree[T]]] = mutable.ListBuffer()
+    q1.enqueue(this)
+
+    while (q1.nonEmpty || q2.nonEmpty) {
+      if (q1.nonEmpty) {
+        val nodes: List[BTree[T]] = q1.toList
+        corners += nodes.headOption
+        if (nodes.lengthCompare(1) > 0) corners += nodes.lastOption
+
+        while (q1.nonEmpty) {
+          val node: BTree[T] = q1.dequeue
+          node.left.foreach(l => q2.enqueue(l))
+          node.right.foreach(r => q2.enqueue(r))
+        }
+      } else {
+        val nodes: List[BTree[T]] = q2.toList
+        corners += nodes.headOption
+        if (nodes.lengthCompare(1) > 0) corners += nodes.lastOption
+
+        while (q2.nonEmpty) {
+          val node: BTree[T] = q2.dequeue
+          node.left.foreach(l => q1.enqueue(l))
+          node.right.foreach(r => q1.enqueue(r))
+        }
+      }
+    }
+    corners.toList.flatten
   }
 
-  private def getLeftChildrenAtLevel(level: Int): Option[Seq[BTree[T]]] = getChildrenAtLevel(left = true)(level)
-  private def getRightChildrenAtLevel(level: Int): Option[Seq[BTree[T]]] = getChildrenAtLevel(left = false)(level)
+  def convertToLinkedList: Option[JccLinkedList[T]] = {
+    val third = this.right.flatMap(n => n.convertToLinkedList)
+    val middle = JccLinkedList(this.value, third)
+    val first = this.left.flatMap(n => n.convertToLinkedList)
+
+    def append(ll: JccLinkedList[T], last: JccLinkedList[T]): JccLinkedList[T] = ll.next match {
+      case Some(n) => JccLinkedList(ll.value, Option(append(n, last)))
+      case None => JccLinkedList(ll.value, Option(last))
+    }
+
+    first match {
+      case None => Option(middle)
+      case Some(n) => Option(append(n, middle))
+    }
+  }
 
   private def getKids(node: BTree[T]): Option[Seq[BTree[T]]] = {
     val kids = Seq(node.left, node.right).flatten
@@ -545,6 +586,11 @@ case class BTree[T](value: T, left: Option[BTree[T]], right: Option[BTree[T]]) e
 case class BSTreeOfInt(value: Int, left: Option[BSTreeOfInt], right: Option[BSTreeOfInt]) extends Tree[Int] {
   def hasLeft: Boolean = left.isDefined
   def hasRight: Boolean = right.isDefined
+}
+
+case class DoublyLinkedList[T](value: T, next: Option[DoublyLinkedList[T]], parent: Option[DoublyLinkedList[T]])
+case class JccLinkedList[T](value: T, next: Option[JccLinkedList[T]]) {
+  def hasNext: Boolean = next.nonEmpty
 }
 
 object BTree {

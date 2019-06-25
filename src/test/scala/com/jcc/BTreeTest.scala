@@ -338,8 +338,27 @@ class BTreeTest extends FlatSpec with MustMatchers {
     BTree.verticalSum(tree) must be (Seq(1, 2, 8, 7, 7, 5))
   }
 
-  "diagonalSum" should "sum negative slope digaonals in a tree of Int" in {
+  "diagonalSum" should "sum negative slope diagonals in a tree of Int" in {
     val tree: BSTreeOfInt = BTree.buildBSTreeOfInt(1, 2, 3, 4, 5, 6, 7).get
     BTree.diagonalSum(tree) must be(Seq(17, 10, 1))
+  }
+
+  "corners" should "find all corners" in {
+    BTree.buildTree(1, 2, 3, 4, 5, 6).corners.map(_.value) must be(List(1, 2, 3, 4, 6))
+    BTree.buildTree(1, 2, 3, 4, 5, 6, 7).corners.map(_.value) must be(List(1, 2, 3, 4, 7))
+    BTree.buildTree(1, 2, 3, 4, 5, 6, 7, 8).corners.map(_.value) must be(List(1, 2, 3, 4, 7, 8))
+  }
+
+  "convertToLinkedList" should "build a linked list from a BTree" in {
+    val values: mutable.ListBuffer[Int] = mutable.ListBuffer()
+    val ll = BTree.buildTree(1, 2, 3, 4, 5, 6).convertToLinkedList.get
+
+    def extract(l: JccLinkedList[Int]): Unit = {
+      values += l.value
+      l.next.foreach(extract)
+    }
+
+    extract(ll)
+    values must be(mutable.ListBuffer(4, 2, 5, 1, 6, 3))
   }
 }
