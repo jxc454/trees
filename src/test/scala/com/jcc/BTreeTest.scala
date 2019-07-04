@@ -361,4 +361,8 @@ class BTreeTest extends FlatSpec with MustMatchers {
     extract(ll)
     values must be(mutable.ListBuffer(4, 2, 5, 1, 6, 3))
   }
+
+  "sinkZeroes" should "push all zeroes to the bottom of the tree" in {
+    val tree = BTree.buildBSTreeOfInt(0, 0, 0, 1, 1, 1, 1)
+  }
 }
