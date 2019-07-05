@@ -50,7 +50,7 @@ class TreeTest extends FlatSpec with MustMatchers {
   }
 
   "height" should "return 1 for single leaf node" in {
-    val tree = Tree(1)
+    val tree: Tree[Int] = Tree(1)
     tree.height must be (1)
   }
 
@@ -131,11 +131,11 @@ class TreeTest extends FlatSpec with MustMatchers {
   }
 
   "sideViewTraversal" should "traverse in the correct order" in {
-    val fTree: Tree[Char] = Tree('f', Option(Tree.buildTree('h')), None)
+    val fTree: Tree[Char] = Tree('f', Tree.buildTree('h'), NilTree)
     val eTree: Tree[Char] = Tree('e', fTree, Tree('g'))
-    val cTree: Tree[Char] = Tree('c', Option(eTree), None)
-    val bTree: Tree[Char] = Tree('b', Option(Tree('d')), None)
-    val root: Tree[Char] = Tree('a', Option(bTree), Option(cTree))
+    val cTree: Tree[Char] = Tree('c', eTree, NilTree)
+    val bTree: Tree[Char] = Tree('b', Tree('d'), NilTree)
+    val root: Tree[Char] = Tree('a', bTree, cTree)
 
     val bufLeft: mutable.ListBuffer[Char] = mutable.ListBuffer()
     val bufRight: mutable.ListBuffer[Char] = mutable.ListBuffer()
@@ -148,11 +148,11 @@ class TreeTest extends FlatSpec with MustMatchers {
   }
 
   "bottomViewTraversal" should "traverse in the correct order" in {
-    val fTree: Tree[Char] = Tree('f', Option(Tree.buildTree('h')), None)
+    val fTree: Tree[Char] = Tree('f', Tree('h'), NilTree)
     val eTree: Tree[Char] = Tree('e', fTree, Tree('g'))
-    val cTree: Tree[Char] = Tree('c', Option(eTree), None)
-    val bTree: Tree[Char] = Tree('b', Option(Tree('d')), Option(Tree('x')))
-    val root: Tree[Char] = Tree('a', Option(bTree), Option(cTree))
+    val cTree: Tree[Char] = Tree('c', eTree, NilTree)
+    val bTree: Tree[Char] = Tree('b', Tree('d'), Tree('x'))
+    val root: Tree[Char] = Tree('a', bTree, cTree)
 
     val bufBottom: mutable.ListBuffer[Char] = mutable.ListBuffer()
 
@@ -162,11 +162,11 @@ class TreeTest extends FlatSpec with MustMatchers {
   }
 
   "topViewTraversal" should "traverse in the correct order" in {
-    val fTree: Tree[Char] = Tree('f', Option(Tree.buildTree('h')), None)
+    val fTree: Tree[Char] = Tree('f', Tree('h'), NilTree)
     val eTree: Tree[Char] = Tree('e', fTree, Tree('g'))
-    val cTree: Tree[Char] = Tree('c', Option(eTree), None)
-    val bTree: Tree[Char] = Tree('b', Option(Tree('d')), Option(Tree('x')))
-    val root: Tree[Char] = Tree('a', Option(bTree), Option(cTree))
+    val cTree: Tree[Char] = Tree('c', eTree, NilTree)
+    val bTree: Tree[Char] = Tree('b', Tree('d'), Tree('x'))
+    val root: Tree[Char] = Tree('a', bTree, cTree)
 
     val bufTop: mutable.ListBuffer[Char] = mutable.ListBuffer()
 
@@ -177,29 +177,29 @@ class TreeTest extends FlatSpec with MustMatchers {
 
   "nextNode" should "return the next node if there is one" in {
     val tree = Tree.buildTree(1, 2, 3, 4, 5, 6, 7)
-    tree.nextNode(tree.left.get).get must be(tree.right.get)
-    tree.nextNode(tree.right.get) must be(None)
+    Tree.nextNode(tree, tree.left).get must be(tree.right)
+    Tree.nextNode(tree, tree.right) must be(None)
 
-    tree.nextNode(Tree.buildTree(4)).get must be(tree.left.get.right.get)
+    Tree.nextNode(tree, Tree.buildTree(4)).get must be(tree.left.right)
   }
 
   "isComplete" should "return true if the tree is complete" in {
     Tree.buildTree(1, 2, 3, 4, 5, 6, 7).isComplete must be(true)
-    Tree(1, None, Option(Tree(2))).isComplete must be(false)
+    Tree(1, NilTree, Tree(2)).isComplete must be(false)
   }
 
   "cousins" should "identify cousin nodes" in {
     val tree = Tree.buildTree(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
 
-    tree.firstCousins(tree.left.get.left.get, tree.right.get.right.get) must be(true)
-    tree.left.get.firstCousins(tree.left.get.left.get.right.get, tree.left.get.right.get.left.get) must be(true)
-    tree.firstCousins(tree.left.get.left.get, tree.right.get.right.get.left.get) must be(false)
+    Tree.firstCousins(tree, tree.left.left, tree.right.right) must be(true)
+    Tree.firstCousins(tree.left, tree.left.left.right, tree.left.right.left) must be(true)
+    Tree.firstCousins(tree, tree.left.left, tree.right.right.left) must be(false)
   }
 
   "findCousins" should "find cousins" in {
     val tree = Tree.buildTree(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
-    tree.findCousins(tree.left.get.right.get).map(_.map(_.value)).get must be(Seq(6, 7))
-    tree.findCousins(tree.left.get.right.get.left.get).map(_.map(_.value)).get must be(Seq(8, 9, 12, 13, 14, 15))
+    Tree.findCousins(tree, tree.left.right).map(_.map(_.value)).get must be(Seq(6, 7))
+    Tree.findCousins(tree, tree.left.right.left).map(_.map(_.value)).get must be(Seq(8, 9, 12, 13, 14, 15))
   }
 
   "sumTree" should "create a new sum tree" in {
@@ -220,22 +220,22 @@ class TreeTest extends FlatSpec with MustMatchers {
   "matchValues" should "find a subtree within another tree" in {
     val matchTree: Tree[Int] = Tree.buildTree(2, 4, 5)
 
-    Tree.buildTree(1, 2, 3, 4, 5, 6, 7).matchValues(matchTree) must be(true)
-    Tree.buildTree(2, 4, 5, 4, 5, 6, 7).matchValues(matchTree) must be(false)
-    Tree.buildTree(7, 6, 5, 4, 3, 2, 1, 0).matchValues(Tree.buildTree(4, 0)) must be(true)
+    Tree.matchValues(Tree.buildTree(1, 2, 3, 4, 5, 6, 7), matchTree) must be(true)
+    Tree.matchValues(Tree.buildTree(2, 4, 5, 4, 5, 6, 7), matchTree) must be(false)
+    Tree.matchValues(Tree.buildTree(7, 6, 5, 4, 3, 2, 1, 0), Tree.buildTree(4, 0)) must be(true)
   }
 
   "matchValuesBetter" should "find a subtree within another tree" in {
     val matchTree: Tree[Int] = Tree.buildTree(2, 4, 5)
 
-    Tree.buildTree(1, 2, 3, 4, 5, 6, 7).matchValues(matchTree) must be(true)
-    Tree.buildTree(2, 4, 5, 4, 5, 6, 7).matchValues(matchTree) must be(false)
-    Tree.buildTree(7, 6, 5, 4, 3, 2, 1, 0).matchValues(Tree.buildTree(4, 0)) must be(true)
+    Tree.matchValues(Tree.buildTree(1, 2, 3, 4, 5, 6, 7), matchTree) must be(true)
+    Tree.matchValues(Tree.buildTree(2, 4, 5, 4, 5, 6, 7), matchTree) must be(false)
+    Tree.matchValues(Tree.buildTree(7, 6, 5, 4, 3, 2, 1, 0), Tree.buildTree(4, 0)) must be(true)
   }
 
   "diameter" should "find the diameter of the tree" in {
     val f: Tree[Char] = Tree('f')
-    val e: Tree[Char] = Tree('e', None, Option(f))
+    val e: Tree[Char] = Tree('e', NilTree, f)
     val d: Tree[Char] = Tree('d')
     val b: Tree[Char] = Tree('b', d, e)
     val c: Tree[Char] = Tree('c')
@@ -252,8 +252,8 @@ class TreeTest extends FlatSpec with MustMatchers {
 
     val d: Tree[Char] = Tree('d')
     val e: Tree[Char] = Tree('e')
-    val b: Tree[Char] = Tree('b', None, Option(d))
-    val c: Tree[Char] = Tree('c', Option(e), None)
+    val b: Tree[Char] = Tree('b', NilTree, d)
+    val c: Tree[Char] = Tree('c', e, NilTree)
     val a: Tree[Char] = Tree('a', b, c)
 
     a.symmetric must be(true)
@@ -265,8 +265,8 @@ class TreeTest extends FlatSpec with MustMatchers {
 
     val d: Tree[Char] = Tree('d')
     val e: Tree[Char] = Tree('e')
-    val b: Tree[Char] = Tree('b', None, Option(d))
-    val c: Tree[Char] = Tree('c', Option(e), None)
+    val b: Tree[Char] = Tree('b', NilTree, d)
+    val c: Tree[Char] = Tree('c', e, NilTree)
     val a: Tree[Char] = Tree('a', b, c)
 
     a.symmetric2 must be(true)
@@ -278,12 +278,12 @@ class TreeTest extends FlatSpec with MustMatchers {
 
     val d: Tree[Char] = Tree('d')
     val e: Tree[Char] = Tree('e')
-    val b: Tree[Char] = Tree('b', None, Option(d))
-    val c: Tree[Char] = Tree('c', Option(e), None)
+    val b: Tree[Char] = Tree('b', NilTree, d)
+    val c: Tree[Char] = Tree('c', e, NilTree)
     val a: Tree[Char] = Tree('a', b, c)
 
-    val b2: Tree[Char] = Tree('b', Option(d), None)
-    val c2: Tree[Char] = Tree('c', None, Option(e))
+    val b2: Tree[Char] = Tree('b', d, NilTree)
+    val c2: Tree[Char] = Tree('c', NilTree, e)
     val a2: Tree[Char] = Tree('a', c2, b2)
 
     a.mirror must be(a2)
@@ -291,26 +291,26 @@ class TreeTest extends FlatSpec with MustMatchers {
 
   "flatten" should "flatten a tree to the right" in {
     Tree.buildTree(1, 2, 3, 4, 5).flatten must be(
-      Tree(1, None, Some(Tree(2, None, Some(Tree(4, None, Some(Tree(5, None, Some(Tree(3, None, None)))))))))
+      Tree(1, NilTree, Tree(2, NilTree, Tree(4, NilTree, Tree(5, NilTree, Tree(3, NilTree, NilTree)))))
     )
   }
 
-  "canMatchWithChaildSwap" should "return true if trees can match by swapping children" in {
-    Tree.buildTree(1, 2, 3).canMatchWithChildSwap(Tree.buildTree(1, 3, 2)) must be(true)
-    Tree.buildTree(1, 2, 3).canMatchWithChildSwap(Tree.buildTree(1, 2, 3)) must be(true)
-    Tree.buildTree(1, 2, 3).canMatchWithChildSwap(Tree.buildTree(1, 4, 3)) must be(false)
-    Tree.buildTree(1, 2, 3, 4, 5, 6, 7)
-      .canMatchWithChildSwap(Tree.buildTree(1, 2, 3, 6, 7, 4, 5)) must be(false)
-    Tree.buildTree(1, 2, 3, 4, 5, 6, 7)
-      .canMatchWithChildSwap(Tree.buildTree(1, 3, 2, 7, 6, 4, 5)) must be(true)
+  "canMatchWithChildSwap" should "return true if trees can match by swapping children" in {
+    Tree.canMatchWithChildSwap(Tree.buildTree(1, 2, 3), Tree.buildTree(1, 3, 2)) must be(true)
+    Tree.canMatchWithChildSwap(Tree.buildTree(1, 2, 3), Tree.buildTree(1, 2, 3)) must be(true)
+    Tree.canMatchWithChildSwap(Tree.buildTree(1, 2, 3), Tree.buildTree(1, 4, 3)) must be(false)
+    Tree.canMatchWithChildSwap(Tree.buildTree(1, 2, 3, 4, 5, 6, 7),
+      Tree.buildTree(1, 2, 3, 6, 7, 4, 5)) must be(false)
+    Tree.canMatchWithChildSwap(Tree.buildTree(1, 2, 3, 4, 5, 6, 7),
+      Tree.buildTree(1, 3, 2, 7, 6, 4, 5)) must be(true)
   }
 
   "LCA" should "find lowest common ancestor of two nodes" in {
     val tree = Tree.buildTree(1, 2, 3, 4, 5, 6, 7, 8, 9)
-    tree.LCA(Tree.buildTree(2), Tree.buildTree(9)).value must be(2)
-    tree.LCA(Tree.buildTree(3), Tree.buildTree(9)).value must be(1)
-    tree.LCA(Tree.buildTree(1), Tree.buildTree(5)).value must be(1)
-    tree.LCA(Tree.buildTree(8), Tree.buildTree(9)).value must be(4)
+    Tree.LCA(tree, Tree.buildTree(2), Tree.buildTree(9)).value must be(2)
+    Tree.LCA(tree, Tree.buildTree(3), Tree.buildTree(9)).value must be(1)
+    Tree.LCA(tree, Tree.buildTree(1), Tree.buildTree(5)).value must be(1)
+    Tree.LCA(tree, Tree.buildTree(8), Tree.buildTree(9)).value must be(4)
   }
 
   "pathsToLeafs" should "return a list of paths from root node to leaf nodes" in {
@@ -322,24 +322,24 @@ class TreeTest extends FlatSpec with MustMatchers {
 
   "ancestors" should "find ancestors of a node" in {
     val tree = Tree.buildTree(1, 2, 3, 4, 5, 6, 7, 8, 9)
-    tree.ancestors(Tree(9)).map(_.value) must be(Seq(1, 2, 4))
+    Tree.ancestors(tree, Tree(9)).map(_.value) must be(Seq(1, 2, 4))
   }
 
   "distance" should "calculate distance between nodes" in {
     val tree = Tree.buildTree(1, 2, 3)
-    tree.distance(Tree(2), Tree(3)) must be(2)
+    Tree.distance(tree, Tree(2), Tree(3)) must be(2)
     val tree2 = Tree.buildTree(1, 2, 3, 4, 5, 6, 7, 8, 9)
-    tree2.distance(Tree.buildTree(8), Tree.buildTree(7)) must be(5)
+    Tree.distance(tree2, Tree.buildTree(8), Tree.buildTree(7)) must be(5)
   }
 
   "verticalSum" should "calculate vertical sum of a tree" in {
-    val left, right = Tree[Int](1, 2, 3, 4, 5)
+    val left, right = Tree.buildTreeOfInt(1, 2, 3, 4, 5)
     val tree = Tree[Int](0, left, right)
     Tree.verticalSum(tree) must be (Seq(1, 2, 8, 7, 7, 5))
   }
 
   "diagonalSum" should "sum negative slope diagonals in a tree of Int" in {
-    val tree: Tree[Int] = Tree.buildTree[Int](1, 2, 3, 4, 5, 6, 7).get
+    val tree: Tree[Int] = Tree.buildTreeOfInt(1, 2, 3, 4, 5, 6, 7)
     Tree.diagonalSum(tree) must be(Seq(17, 10, 1))
   }
 
@@ -351,7 +351,7 @@ class TreeTest extends FlatSpec with MustMatchers {
 
   "convertToLinkedList" should "build a linked list from a Tree" in {
     val values: mutable.ListBuffer[Int] = mutable.ListBuffer()
-    val ll = Tree.buildTree(1, 2, 3, 4, 5, 6).convertToLinkedList.get
+    val ll = Tree.convertToLinkedList(Tree.buildTree(1, 2, 3, 4, 5, 6)).get
 
     def extract(l: JccLinkedList[Int]): Unit = {
       values += l.value

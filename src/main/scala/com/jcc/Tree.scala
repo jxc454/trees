@@ -11,12 +11,12 @@ sealed trait Tree[+T] {
 
   def hasLeft: Boolean = this match {
     case NilTree => false
-    case x => x.left.isEmpty
+    case x => !x.left.isEmpty
   }
 
   def hasRight: Boolean = this match {
     case NilTree => false
-    case x => x.right.isEmpty
+    case x => !x.right.isEmpty
   }
 
   def leftOption: Option[Tree[T]] = this match {
@@ -353,10 +353,9 @@ sealed trait Tree[+T] {
     getSymmetric(this.left, this.right)
   }
 
-  def mirror: Tree[T] = Tree(this.value, this.rightOption.map(_.mirror), this.leftOption.map(_.mirror))
+  def mirror: Tree[T] = Tree(this.value, this.rightOption.map(_.mirror).getOrElse(NilTree), this.leftOption.map(_.mirror).getOrElse(NilTree))
 
   def flatten: Tree[T] = this match {
-    case TreeRich(t, level, parent) => TreeRich(t.flatten, level, parent)
     case NilTree => NilTree
     case Cons(_, NilTree, NilTree) => this
     case Cons(v, NilTree, r) => Cons(v, NilTree, r.flatten)
@@ -413,6 +412,9 @@ sealed trait Tree[+T] {
 }
 
 object Tree {
+  def apply[T](v: T, left: Tree[T], right: Tree[T]): Tree[T] = Cons(v, left, right)
+  def apply[T](v: T): Tree[T] = Cons(v, NilTree, NilTree)
+
   private def childOption[T](tree: Tree[T]): Option[Tree[T]] = tree match {
     case NilTree => None
     case z => Some(z)
@@ -512,7 +514,9 @@ object Tree {
       if (richNode.hasRight) checkNode(richNode.right)
     }
 
-    checkNode(TreeRich(tree, 1, None))
+    val start: TreeRich[T] = TreeRich(tree, 1, None)
+
+    checkNode(start)
 
     buf.find(_.tree == node) match {
       case Some(bTree) => Option(buf.filter(TreeRich.isCousin(_, bTree)).map(_.tree))
@@ -612,8 +616,10 @@ object Tree {
     // node values are different
     if (node.value != tree.value) return false
 
-    (Tree.canMatchWithChildSwap(tree.left, node.left) || Tree.canMatchWithChildSwap(tree.left, node.right)) &&
-      (Tree.canMatchWithChildSwap(tree.right, node.left) || Tree.canMatchWithChildSwap(tree.right, node.right))
+    (tree.leftOption.forall(Tree.canMatchWithChildSwap(_, node.leftOption.getOrElse(NilTree))) ||
+      tree.leftOption.forall(Tree.canMatchWithChildSwap(_, node.rightOption.getOrElse(NilTree)))) &&
+      (tree.rightOption.forall(Tree.canMatchWithChildSwap(_, node.leftOption.getOrElse(NilTree))) ||
+        tree.rightOption.forall(Tree.canMatchWithChildSwap(_, node.rightOption.getOrElse(NilTree))))
   }
 
   def ancestors[T](tree: Tree[T], node: Tree[T]): List[Tree[T]] = {
@@ -644,92 +650,18 @@ object Tree {
       case Some(n) => Option(append(n, middle))
     }
   }
-}
-
-case object NilTree extends Tree[Nothing]
-
-case class Cons[+T](v: T, l: Tree[T], r: Tree[T]) extends Tree[T]
-
-object Cons {
-  def apply[T](value: T, left: Tree[T], right: Tree[T]): Tree[T] = Tree(value, left, right)
-  def apply[T](value: T): Tree[T] = Tree(value)
-
-  def buildTreeOfInt(values: Int*): Tree[Int] = {
-    if (values.isEmpty) {
-      NilTree
-    } else {
-      val sortedList: Seq[Int] = MergeSortAsc(values: _*)
-      val (left: Seq[Int], right: Seq[Int]) = sortedList.splitAt(sortedList.length / 2)
-      Tree[Int](right.head, buildTreeOfInt(left: _*), buildTreeOfInt(right.tail: _*))
-    }
-  }
-
-  def deleteTree[T](tree: Tree[T]): Unit = {
-    tree match {
-      case Cons(_, leftTree, rightTree) =>
-        deleteTree(leftTree)
-        deleteTree(rightTree)
-      case Cons(_, Cons(v, l, r), NilTree) => deleteTree(Cons(v, l, r))
-      case Cons(_, NilTree, Cons(v, l, r)) => deleteTree(Cons(v, l, r))
-      case Cons(_, NilTree, NilTree) =>
-    }
-  }
 
   def sumTree(node: Tree[Int]): Tree[Int] = {
-    val newLeft = if (node.hasLeft) Option(sumTree(node.left)) else None
-    val newRight = if (node.hasRight) Option(sumTree(node.right)) else None
-    val newValue =
+    val newLeft = if (node.hasLeft) sumTree(node.left) else NilTree
+    val newRight = if (node.hasRight) sumTree(node.right) else NilTree
+    val newValue: Int =
       (if (node.hasLeft) node.left.value else 0) +
         (if (node.hasRight) node.right.value else 0) +
-        (if (newLeft.isDefined) newLeft.get.value else 0) +
-        (if (newRight.isDefined) newRight.get.value else 0)
+        (if (!newLeft.isEmpty) newLeft.value else 0) +
+        (if (!newRight.isEmpty) newRight.value else 0)
 
-    Tree(newValue, newLeft, newRight)
+    Tree[Int](newValue, newLeft, newRight)
   }
-
-  def verticalSum(tree: Tree[Int]): Seq[Int] = {
-    val sums: mutable.Map[Int, Int] = mutable.Map[Int, Int]()
-
-    def innerVerticalSum(innerTree: Tree[Int], longitude: Int): Unit = {
-      if (sums.contains(longitude)) {
-        sums.update(longitude, sums(longitude) + innerTree.value)
-      } else {
-        sums += (longitude -> innerTree.value)
-      }
-      innerTree.leftOption.foreach(l => innerVerticalSum(l, longitude - 1))
-      innerTree.rightOption.foreach(r => innerVerticalSum(r, longitude + 1))
-    }
-
-    innerVerticalSum(tree, 0)
-    sums.toSeq.sortBy(_._1).map(_._2)
-  }
-
-  def diagonalSum(tree: Tree[Int]): Seq[Int] = {
-    val diagonals: mutable.Map[Int, Int] = mutable.Map()
-
-    def innerDiagonalSum(innerTree: Tree[Int], latitude: Int, longitude: Int): Unit = {
-      val key: Int = latitude - longitude
-      if (diagonals.contains(key)) {
-        diagonals.update(key, diagonals(key) + innerTree.value)
-      } else {
-        diagonals += (key -> innerTree.value)
-      }
-      innerTree.leftOption.foreach(l => innerDiagonalSum(l, latitude + 1, longitude - 1))
-      innerTree.rightOption.foreach(r => innerDiagonalSum(r, latitude + 1, longitude + 1))
-    }
-
-    innerDiagonalSum(tree, 0, 0)
-    diagonals.toSeq.sortBy(_._1).map(_._2)
-  }
-
-//  def sinkZeroes(tree: Option[Tree[Int]]): Option[Tree[Int]] = tree match {
-//    case None => None
-//    case Some(t) if t.left.isEmpty && t.right.isEmpty => Option(t)
-//    case Some(t) => {
-//      t.leftOption.flatMap(n => sinkZeroes(n))
-//      t.rightOption.flatMap(n => sinkZeroes(Option(n)))
-//    }
-//  }
 
   def allWords(rightPredicate: Int => Boolean)(globalNums: List[Int]): List[List[Int]] = {
     val memo: mutable.Map[Int, List[List[Int]]] = mutable.Map[Int, List[List[Int]]]()
@@ -778,6 +710,79 @@ object Cons {
     }
     allWordsHelper(globalNums, 0)
   }
+
+  def verticalSum(tree: Tree[Int]): Seq[Int] = {
+    val sums: mutable.Map[Int, Int] = mutable.Map[Int, Int]()
+
+    def innerVerticalSum(innerTree: Tree[Int], longitude: Int): Unit = {
+      if (sums.contains(longitude)) {
+        sums.update(longitude, sums(longitude) + innerTree.value)
+      } else {
+        sums += (longitude -> innerTree.value)
+      }
+      innerTree.leftOption.foreach(l => innerVerticalSum(l, longitude - 1))
+      innerTree.rightOption.foreach(r => innerVerticalSum(r, longitude + 1))
+    }
+
+    innerVerticalSum(tree, 0)
+    sums.toSeq.sortBy(_._1).map(_._2)
+  }
+
+  def diagonalSum(tree: Tree[Int]): Seq[Int] = {
+    val diagonals: mutable.Map[Int, Int] = mutable.Map()
+
+    def innerDiagonalSum(innerTree: Tree[Int], latitude: Int, longitude: Int): Unit = {
+      val key: Int = latitude - longitude
+      if (diagonals.contains(key)) {
+        diagonals.update(key, diagonals(key) + innerTree.value)
+      } else {
+        diagonals += (key -> innerTree.value)
+      }
+      innerTree.leftOption.foreach(l => innerDiagonalSum(l, latitude + 1, longitude - 1))
+      innerTree.rightOption.foreach(r => innerDiagonalSum(r, latitude + 1, longitude + 1))
+    }
+
+    innerDiagonalSum(tree, 0, 0)
+    diagonals.toSeq.sortBy(_._1).map(_._2)
+  }
+
+  def buildTreeOfInt(values: Int*): Tree[Int] = {
+    if (values.isEmpty) {
+      NilTree
+    } else {
+      val sortedList: Seq[Int] = MergeSortAsc(values: _*)
+      val (left: Seq[Int], right: Seq[Int]) = sortedList.splitAt(sortedList.length / 2)
+      Tree[Int](right.head, buildTreeOfInt(left: _*), buildTreeOfInt(right.tail: _*))
+    }
+  }
+}
+
+case object NilTree extends Tree[Nothing]
+
+case class Cons[+T](v: T, l: Tree[T], r: Tree[T]) extends Tree[T]
+
+object Cons {
+
+
+  def deleteTree[T](tree: Tree[T]): Unit = {
+    tree match {
+      case Cons(_, leftTree, rightTree) =>
+        deleteTree(leftTree)
+        deleteTree(rightTree)
+      case Cons(_, Cons(v, l, r), NilTree) => deleteTree(Cons(v, l, r))
+      case Cons(_, NilTree, Cons(v, l, r)) => deleteTree(Cons(v, l, r))
+      case Cons(_, NilTree, NilTree) =>
+    }
+  }
+
+//  def sinkZeroes(tree: Option[Tree[Int]]): Option[Tree[Int]] = tree match {
+//    case None => None
+//    case Some(t) if t.left.isEmpty && t.right.isEmpty => Option(t)
+//    case Some(t) => {
+//      t.leftOption.flatMap(n => sinkZeroes(n))
+//      t.rightOption.flatMap(n => sinkZeroes(Option(n)))
+//    }
+//  }
 }
 
 case class TreeRich[+T](tree: Tree[T], level: Int, parent: Option[Tree[T]]) extends Tree[T] {
@@ -785,16 +790,21 @@ case class TreeRich[+T](tree: Tree[T], level: Int, parent: Option[Tree[T]]) exte
   override def hasLeft: Boolean = tree.hasLeft
   override def hasRight: Boolean = tree.hasRight
 
-  override val left: TreeRich[T] = if (!tree.left.isEmpty) TreeRich(tree.left, level + 1, Some(this)) else NilTreeRich
-  override val right: TreeRich[T] = if (!tree.right.isEmpty) TreeRich(tree.right, level + 1, Some(this)) else NilTreeRich
+  override lazy val left: TreeRich[T] = tree match {
+    case NilTree => TreeRich(NilTree, -999, None)
+    case t => if (!t.left.isEmpty) TreeRich(t.left, level + 1, Some(t)) else TreeRich(NilTree, -999, None)
+  }
+
+  override lazy val right: TreeRich[T] = tree match {
+    case NilTree => TreeRich(NilTree, -999, None)
+    case t => if (!t.right.isEmpty) TreeRich(t.right, level + 1, Some(t)) else TreeRich(NilTree, -999, None)
+  }
 }
 
 object TreeRich {
   def apply[T](node: Tree[T], level: Int, parent: Option[Tree[T]]): TreeRich[T] = new TreeRich(node, level, parent)
   def isCousin[T](tree: TreeRich[T], node: TreeRich[T]): Boolean = node.level == tree.level && node.parent != tree.parent
 }
-
-case object NilTreeRich extends TreeRich[Nothing](NilTree, -999, None)
 
 case class DoublyLinkedList[T](value: T, next: Option[DoublyLinkedList[T]], parent: Option[DoublyLinkedList[T]])
 case class JccLinkedList[T](value: T, next: Option[JccLinkedList[T]]) {
