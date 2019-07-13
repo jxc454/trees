@@ -364,5 +364,12 @@ class TreeTest extends FlatSpec with MustMatchers {
 
   "sinkZeroes" should "push all zeroes to the bottom of the tree" in {
     val tree = Tree.buildTree[Int](0, 0, 0, 1, 1, 1, 1)
+    Tree.sinkZeroes(tree) must be(Tree.buildTree[Int](1, 1, 1, 0, 0, 0, 1))
+    val tree2 = Tree.buildTree[Int](0, 0, 0, 0, 0, 0)
+    Tree.sinkZeroes(tree2) must be(tree2)
+    val tree3 = Tree.buildTree[Int](0, 0, 0, 0, 0, 0)
+    Tree.sinkZeroes(tree3) must be(tree3)
+    val tree4 = Tree.buildTree[Int](1, 1, 1, 0, 0, 0)
+    Tree.sinkZeroes(tree4) must be(tree4)
   }
 }

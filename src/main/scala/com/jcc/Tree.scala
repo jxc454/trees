@@ -280,8 +280,6 @@ sealed trait Tree[+T] {
     })
   }
 
-
-
   def isComplete: Boolean = {
     val q1 = mutable.Queue[Tree[T]]()
     val buf: ListBuffer[T] = ListBuffer()
@@ -301,10 +299,6 @@ sealed trait Tree[+T] {
 
     inOrderTree == this
   }
-
-
-
-
 
   def diameter: Int = {
     var max: Int = 0
@@ -746,6 +740,21 @@ object Tree {
     diagonals.toSeq.sortBy(_._1).map(_._2)
   }
 
+  def sinkZeroes(tree: Tree[Int]): Tree[Int] = tree match {
+    case NilTree => NilTree
+    case t if t.left.isEmpty && t.right.isEmpty => t
+    case t =>
+      val l = t.leftOption.map(n => sinkZeroes(n)).getOrElse(NilTree)
+      val r = t.rightOption.map(n => sinkZeroes(n)).getOrElse(NilTree)
+      if (tree.value == 0) {
+        if (r.isEmpty || l.value == 1) {
+          Tree(l.value, sinkZeroes(Tree(tree.value, l.left, l.right)), r)
+        } else {
+          Tree(r.value, l, sinkZeroes(Tree(tree.value, r.left, r.right)))
+        }
+      } else tree
+  }
+
   def buildTreeOfInt(values: Int*): Tree[Int] = {
     if (values.isEmpty) {
       NilTree
@@ -762,8 +771,6 @@ case object NilTree extends Tree[Nothing]
 case class Cons[+T](v: T, l: Tree[T], r: Tree[T]) extends Tree[T]
 
 object Cons {
-
-
   def deleteTree[T](tree: Tree[T]): Unit = {
     tree match {
       case Cons(_, leftTree, rightTree) =>
@@ -774,15 +781,6 @@ object Cons {
       case Cons(_, NilTree, NilTree) =>
     }
   }
-
-//  def sinkZeroes(tree: Option[Tree[Int]]): Option[Tree[Int]] = tree match {
-//    case None => None
-//    case Some(t) if t.left.isEmpty && t.right.isEmpty => Option(t)
-//    case Some(t) => {
-//      t.leftOption.flatMap(n => sinkZeroes(n))
-//      t.rightOption.flatMap(n => sinkZeroes(Option(n)))
-//    }
-//  }
 }
 
 case class TreeRich[+T](tree: Tree[T], level: Int, parent: Option[Tree[T]]) extends Tree[T] {
@@ -807,6 +805,7 @@ object TreeRich {
 }
 
 case class DoublyLinkedList[T](value: T, next: Option[DoublyLinkedList[T]], parent: Option[DoublyLinkedList[T]])
+
 case class JccLinkedList[T](value: T, next: Option[JccLinkedList[T]]) {
   def hasNext: Boolean = next.nonEmpty
 }
