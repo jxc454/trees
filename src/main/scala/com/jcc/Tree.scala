@@ -3,6 +3,7 @@ package com.jcc
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.math.max
 
 sealed trait Tree[+T] {
   def isEmpty: Boolean = this match {
@@ -805,6 +806,25 @@ object Tree {
     }
 
     traverse(tree, min, 0)
+  }
+
+  def maxRootToLeafPath(tree: Tree[Int]): Option[JccLinkedList[Int]] = {
+    def walk(tree: Tree[Int]): (Option[JccLinkedList[Int]], Int) = tree match {
+      case NilTree => (None, 0)
+      case t =>
+        val (leftPath: Option[JccLinkedList[Int]], leftTotal: Int) = walk(t.left)
+        val (rightPath: Option[JccLinkedList[Int]], rightTotal: Int) = walk(t.right)
+
+        val (path: JccLinkedList[Int], sum) = if (leftTotal >= rightTotal) {
+          (JccLinkedList(tree.value, leftPath), t.value + leftTotal)
+        } else {
+          (JccLinkedList(tree.value, rightPath), t.value + rightTotal)
+        }
+
+        (Option(path), sum)
+    }
+
+    walk(tree)._1
   }
 }
 

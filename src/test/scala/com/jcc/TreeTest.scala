@@ -390,4 +390,28 @@ class TreeTest extends FlatSpec with MustMatchers {
     Tree.truncatePathsLessThan(tree2, 8) must be(NilTree)
     Tree.truncatePathsLessThan(tree2, 0) must be(tree2)
   }
+
+  "maxRootToLeafPath" should "find a path with the max sum" in {
+    def buildList(ints: Seq[Int]): Option[JccLinkedList[Int]] =
+      (ints :\ (None: Option[JccLinkedList[Int]]))((k, acc) => Option(JccLinkedList(k, acc)))
+
+    val res = Tree.maxRootToLeafPath(Tree.buildTree[Int](1, 2, 3, 4, 5, 6, 7))
+    val expected = buildList(Seq(1, 3, 7))
+    res must be(expected)
+
+    val res2 = Tree.maxRootToLeafPath(Tree.buildTree[Int](1, 2, 3, 7, 5, 6, 2))
+    val expected2 = buildList(Seq(1, 2, 7))
+    res2 must be(expected2)
+
+    val c4 = Tree(4)
+    val b4 = Tree(4, NilTree, c4)
+    val a4 = Tree(4, NilTree, b4)
+    val a5 = Tree(5)
+    val a6 = Tree(6, NilTree, a5)
+    val root = Tree(0, a6, a4)
+
+    val res3 = Tree.maxRootToLeafPath(root)
+    val expected3 = buildList(Seq(0, 4, 4, 4))
+    res3 must be(expected3)
+  }
 }
