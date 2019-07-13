@@ -372,4 +372,22 @@ class TreeTest extends FlatSpec with MustMatchers {
     val tree4 = Tree.buildTree[Int](1, 1, 1, 0, 0, 0)
     Tree.sinkZeroes(tree4) must be(tree4)
   }
+
+  "removeHalfNodes" should "result in a complete tree" in {
+    Tree.buildTree(1, 2, 3, 4).removeHalfNodes must be(Tree.buildTree(1, 4, 3))
+    val e = Tree('e', NilTree, NilTree)
+    val d = Tree('d', NilTree, NilTree)
+    val c = Tree('c', d, e)
+    val b = Tree('b', c, NilTree)
+    val a = Tree('a', NilTree, b)
+    a.removeHalfNodes must be(c)
+  }
+
+  "truncatePathsLessThan" should "clear paths less than N" in {
+    val tree1 = Tree.buildTree(1, 2, 3, 4, 5, 6, 7)
+    Tree.truncatePathsLessThan(tree1, 8) must be(Tree.buildTree(3, 6, 7))
+    val tree2 = Tree.buildTree(1, 2, 3, 4, 5, 1, 7)
+    Tree.truncatePathsLessThan(tree2, 8) must be(NilTree)
+    Tree.truncatePathsLessThan(tree2, 0) must be(tree2)
+  }
 }

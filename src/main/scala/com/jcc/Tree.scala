@@ -1,5 +1,6 @@
 package com.jcc
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -357,9 +358,6 @@ sealed trait Tree[+T] {
     case Cons(v, l, r) => Cons(v, NilTree, Tree.appendToFarRight(l.flatten, r.flatten))
   }
 
-
-
-
   def pathsToLeafs: List[List[T]] = {
     def innerPaths(tree: Tree[T]): List[List[T]] = {
       (tree.leftOption.map(node => innerPaths(node)), tree.rightOption.map(node => innerPaths(node))) match {
@@ -403,6 +401,19 @@ sealed trait Tree[+T] {
     }
     corners.toList.flatten
   }
+
+  def removeHalfNodes: Tree[T] = this match {
+    case NilTree => NilTree
+    case t if !t.hasLeft && !t.hasRight => t
+    case tree => if (tree.hasLeft && tree.hasRight) {
+      Tree(tree.value, tree.left.removeHalfNodes, tree.right.removeHalfNodes)
+    } else if (tree.hasRight) {
+      tree.right.removeHalfNodes
+    } else if (tree.hasLeft) {
+      tree.left.removeHalfNodes
+    } else throw new IllegalArgumentException
+  }
+
 }
 
 object Tree {
@@ -763,6 +774,37 @@ object Tree {
       val (left: Seq[Int], right: Seq[Int]) = sortedList.splitAt(sortedList.length / 2)
       Tree[Int](right.head, buildTreeOfInt(left: _*), buildTreeOfInt(right.tail: _*))
     }
+  }
+
+  def truncatePathsLessThan(tree: Tree[Int], min: Int): Tree[Int] = {
+    def truncateMe(tree: Tree[Int], min: Int, current: Int): Boolean = {
+      tree match {
+        case _ if current >= min => false
+        case NilTree => true
+        case t if truncateMe(t.left, min, current + t.value) || truncateMe(t.right, min, current + t.value) => true
+        case _ => false
+      }
+    }
+
+    @tailrec
+    def traverse(tree: Tree[Int], min: Int, current: Int): Tree[Int] = tree match {
+      case NilTree => NilTree
+      case t =>
+        val truncateLeft = truncateMe(tree.left, min, current + t.value)
+        val truncateRight = truncateMe(tree.right, min, current + t.value)
+
+        if (truncateLeft && truncateRight) {
+          NilTree
+        } else if (!truncateLeft && !truncateRight) {
+          t
+        } else if (truncateLeft) {
+          traverse(t.right, min, current + t.right.value)
+        } else if (truncateRight) {
+          traverse(t.left, min, current + t.left.value)
+        } else throw new IllegalStateException()
+    }
+
+    traverse(tree, min, 0)
   }
 }
 
