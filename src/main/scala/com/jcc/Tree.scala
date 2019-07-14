@@ -2,8 +2,6 @@ package com.jcc
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
-import scala.math.max
 
 sealed trait Tree[+T] {
   def isEmpty: Boolean = this match {
@@ -284,7 +282,7 @@ sealed trait Tree[+T] {
 
   def isComplete: Boolean = {
     val q1 = mutable.Queue[Tree[T]]()
-    val buf: ListBuffer[T] = ListBuffer()
+    val buf: mutable.ListBuffer[T] = mutable.ListBuffer()
 
     q1.enqueue(this)
 
@@ -413,6 +411,58 @@ sealed trait Tree[+T] {
     } else if (tree.hasLeft) {
       tree.left.removeHalfNodes
     } else throw new IllegalArgumentException
+  }
+
+  def heightBalanced: Boolean = {
+    def height(tree: Tree[T]): Int = tree match {
+      case NilTree => 0
+      case t => math.max(1 + height(t.left), 1 + height(t.right))
+    }
+
+    this match {
+      case NilTree => true
+      case t => math.abs(height(t.left) - height(t.right)) <= 1
+    }
+  }
+
+  def leftChildRightCousin: Tree[T] = {
+    val map: mutable.Map[Tree[T], (Tree[T], Tree[T])] = mutable.Map() // (left child, right cousin)
+
+    def buildFromMap(node: Tree[T]): Tree[T] = node match {
+      case NilTree => NilTree
+      case tree =>
+        val nodeL = map(tree)._1
+        val nodeR = map(tree)._2
+
+        Tree(tree.value, buildFromMap(nodeL), buildFromMap(nodeR))
+    }
+
+    val q1: mutable.Queue[Tree[T]] = mutable.Queue()
+    val q2: mutable.Queue[Tree[T]] = mutable.Queue()
+
+    q1.enqueue(this)
+
+    while (q1.nonEmpty || q2.nonEmpty) {
+      if (q1.nonEmpty) {
+        val node = q1.dequeue()
+        node match {
+          case NilTree =>
+          case n =>
+            map += (n -> (n.left, if (q1.isEmpty) NilTree else q1.head))
+            q2.enqueue(n.left, n.right)
+        }
+      } else if (q2.nonEmpty) {
+        val node = q2.dequeue()
+        node match {
+          case NilTree =>
+          case n =>
+            map += (n -> (n.left, if (q2.isEmpty) NilTree else q2.head))
+            q1.enqueue(n.left, n.right)
+        }
+      }
+    }
+
+    buildFromMap(this)
   }
 
 }
@@ -573,7 +623,7 @@ object Tree {
     }
 
     // an in-order and pre/post-order uniquely ID a binary tree
-    val nodeInOrder, nodePreOrder, treeInOrder, treePreOrder = ListBuffer[T]()
+    val nodeInOrder, nodePreOrder, treeInOrder, treePreOrder = mutable.ListBuffer[T]()
 
     inOrderTraversal(node)(nodeInOrder += _)
     inOrderTraversal(tree)(treeInOrder += _)

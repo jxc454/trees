@@ -414,4 +414,17 @@ class TreeTest extends FlatSpec with MustMatchers {
     val expected3 = buildList(Seq(0, 4, 4, 4))
     res3 must be(expected3)
   }
+
+  "heightBalanced" should "return true if the tree is height balanced" in {
+    NilTree.heightBalanced must be(true)
+    Tree.buildTree(1, 2, 3).heightBalanced must be(true)
+    Tree(0, NilTree, Tree.buildTree(1, 2, 3)).heightBalanced must be (false)
+  }
+
+  "leftChildRightCousin" should "create a left-child/right-cousin tree" in {
+    NilTree.leftChildRightCousin must be(NilTree)
+    Tree.buildTree(1, 2, 3).leftChildRightCousin must be(Tree(1, Tree(2, NilTree, Tree(3)), NilTree))
+    val allLefts = Tree(1, Tree(2, Tree(3), NilTree), NilTree)
+    allLefts.leftChildRightCousin must be (allLefts)
+  }
 }
