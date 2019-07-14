@@ -426,5 +426,16 @@ class TreeTest extends FlatSpec with MustMatchers {
     Tree.buildTree(1, 2, 3).leftChildRightCousin must be(Tree(1, Tree(2, NilTree, Tree(3)), NilTree))
     val allLefts = Tree(1, Tree(2, Tree(3), NilTree), NilTree)
     allLefts.leftChildRightCousin must be (allLefts)
+    val hmm = Tree(1, NilTree, Tree(2, NilTree, Tree.buildTree(3, 4, 5)))
+    hmm.leftChildRightCousin must be(Tree(1, Tree(2, Tree(3, Tree(4, NilTree, Tree(5)), NilTree), NilTree), NilTree))
+  }
+
+  "isBSTree" should "return true if the tree is a BST" in {
+    Tree.isBST(NilTree) must be(true)
+    Tree.isBST(Tree.buildTree(2, 1, 3)) must be (true)
+    Tree.isBST(Tree.buildTree(1, 1, 1)) must be (false)
+    Tree.isBST(Tree(2, Tree(2, Tree(2), NilTree), NilTree)) must be(true)
+    Tree.isBST(Tree.buildTree(1, 2, 3, 4, 5, 6, 7, 8, 9)) must be(false)
+    Tree.isBST(Tree.buildTree(10, 5, 15, 2, 7, 9, 19)) must be(false)
   }
 }

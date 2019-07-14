@@ -448,7 +448,7 @@ sealed trait Tree[+T] {
         node match {
           case NilTree =>
           case n =>
-            map += (n -> (n.left, if (q1.isEmpty) NilTree else q1.head))
+            map += (n -> (if (n.hasLeft) n.left else n.right, if (q1.isEmpty) NilTree else q1.head))
             q2.enqueue(n.left, n.right)
         }
       } else if (q2.nonEmpty) {
@@ -456,7 +456,7 @@ sealed trait Tree[+T] {
         node match {
           case NilTree =>
           case n =>
-            map += (n -> (n.left, if (q2.isEmpty) NilTree else q2.head))
+            map += (n -> (if (n.hasLeft) n.left else n.right, if (q2.isEmpty) NilTree else q2.head))
             q1.enqueue(n.left, n.right)
         }
       }
@@ -464,7 +464,6 @@ sealed trait Tree[+T] {
 
     buildFromMap(this)
   }
-
 }
 
 object Tree {
@@ -510,7 +509,6 @@ object Tree {
     case Cons(v, l, NilTree) => Cons(v, l, appendMe)
     case Cons(v, l, r) => Cons(v, l, appendToFarRight(r, appendMe))
   }
-
 
   private def addNode[T](seq: Seq[T], i: Int): Tree[T] = {
     val left: Tree[T] = if (seq.lengthCompare(2 * i + 1) > 0) addNode(seq, 2 * i + 1) else NilTree
@@ -875,6 +873,23 @@ object Tree {
     }
 
     walk(tree)._1
+  }
+
+  def isBST(tree: Tree[Int]): Boolean = {
+    def walk(t: Tree[Int], left: Boolean, fn: Int => Boolean): Boolean = t match {
+      case NilTree => true
+      case node =>
+        // test node is between left and right children, and node's child is between node and node's parent
+        if (node.value >= node.leftOption.map(_.value).getOrElse(Int.MinValue) &&
+          node.value < node.rightOption.map(_.value).getOrElse(Int.MaxValue) &&
+          (if (left && node.hasRight) fn(node.right.value) else true) &&
+          (if (!left && node.hasLeft) fn(node.left.value) else true)) {
+            walk(node.left, left = true, (rightChildValue: Int) => rightChildValue <= node.value) &&
+            walk(node.right, left = false, (leftChildValue: Int) => leftChildValue > node.value)
+        } else false
+    }
+
+    walk(tree, left = true, (_: Int) => true)
   }
 }
 
