@@ -2,6 +2,11 @@ package com.jcc
 
 import scala.annotation.tailrec
 import scala.collection.mutable
+import com.redis._
+
+object Red {
+  val r = new RedisClient("localhost", 6379)
+}
 
 sealed trait Tree[+T] {
   def isEmpty: Boolean = this match {
@@ -463,6 +468,11 @@ sealed trait Tree[+T] {
     }
 
     buildFromMap(this)
+  }
+
+  def invertRecursive: Tree[T] = this match {
+    case NilTree => NilTree
+    case t => Tree(t.value, t.right.invertRecursive, t.left.invertRecursive)
   }
 }
 

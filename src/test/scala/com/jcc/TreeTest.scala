@@ -438,4 +438,12 @@ class TreeTest extends FlatSpec with MustMatchers {
     Tree.isBST(Tree.buildTree(1, 2, 3, 4, 5, 6, 7, 8, 9)) must be(false)
     Tree.isBST(Tree.buildTree(10, 5, 15, 2, 7, 9, 19)) must be(false)
   }
+
+  "invertRecursive" should "swap immediate children of a tree" in {
+    NilTree.invertRecursive must be(NilTree)
+    Tree.buildTree(2, 1, 3).invertRecursive must be (Tree.buildTree(2, 3, 1))
+    println(Tree.buildTree(10, 5, 15, 3, 8, 8, 20))
+        Tree.buildTree(10, 5, 15, 3, 8, 8, 20)
+      .invertRecursive must be (Tree.buildTree(10, 15, 5, 20, 8, 8, 3))
+  }
 }
